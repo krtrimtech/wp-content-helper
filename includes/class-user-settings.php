@@ -1,4 +1,4 @@
-?php
+<?php
 /**
  * User Settings - Manage per-user API keys
  */

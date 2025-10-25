@@ -1,4 +1,4 @@
-?php
+<?php
 /**
  * Plugin Name: WP Content Helper
  * Plugin URI: https://github.com/krtrimtech/wp-content-helper
