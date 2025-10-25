@@ -3,7 +3,7 @@
  * Plugin Name: WP Content Helper
  * Plugin URI: https://github.com/krtrimtech/wp-content-helper
  * Description: Grammarly-like AI writing assistant with Google Gemini API. Each user uses their own API key.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: Krtrim (Shyanukant Rathi)
  * Author URI: https://shyanukant.github.io/
  * License: GPL v2 or later
@@ -97,7 +97,7 @@ Text: {$text}";
 }
 
 // ========================================
-// USER SETTINGS
+// USER SETTINGS - NOW IN DASHBOARD
 // ========================================
 class AIWA_User_Settings {
     private static $instance = null;
@@ -110,102 +110,225 @@ class AIWA_User_Settings {
     }
     
     private function __construct() {
-        add_action('show_user_profile', array($this, 'add_api_key_field'));
-        add_action('edit_user_profile', array($this, 'add_api_key_field'));
-        add_action('personal_options_update', array($this, 'save_api_key'));
-        add_action('edit_user_profile_update', array($this, 'save_api_key'));
+        // Add admin menu
+        add_action('admin_menu', array($this, 'add_admin_menu'));
+        
+        // Save settings
+        add_action('admin_post_aiwa_save_settings', array($this, 'save_settings'));
+        
+        // Admin notice
         add_action('admin_notices', array($this, 'api_key_notice'));
     }
     
-    public function add_api_key_field($user) {
-        if (!current_user_can('edit_posts')) return;
-        
-        $api_key = get_user_meta($user->ID, 'aiwa_gemini_api_key', true);
-        $preferred_lang = get_user_meta($user->ID, 'aiwa_preferred_language', true);
+    /**
+     * Add admin menu page
+     */
+    public function add_admin_menu() {
+        add_menu_page(
+            'AI Writing Assistant',           // Page title
+            'AI Assistant',                   // Menu title
+            'edit_posts',                     // Capability
+            'wp-content-helper',              // Menu slug
+            array($this, 'render_settings_page'), // Callback
+            'dashicons-edit',                 // Icon
+            30                                // Position
+        );
+    }
+    
+    /**
+     * Render settings page
+     */
+    public function render_settings_page() {
+        $user_id = get_current_user_id();
+        $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
+        $preferred_lang = get_user_meta($user_id, 'aiwa_preferred_language', true);
         if (empty($preferred_lang)) $preferred_lang = 'en';
+        
+        // Show success message if saved
+        if (isset($_GET['settings-updated'])) {
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><strong>Settings saved successfully!</strong></p>
+            </div>
+            <?php
+        }
         ?>
-        <h2>AI Writing Assistant Settings</h2>
-        <table class="form-table">
-            <tr>
-                <th><label for="aiwa_gemini_api_key">Google Gemini API Key</label></th>
-                <td>
-                    <input type="text" name="aiwa_gemini_api_key" id="aiwa_gemini_api_key" 
-                           value="<?php echo esc_attr($api_key); ?>" class="regular-text" 
-                           placeholder="Enter your Gemini API key">
-                    <p class="description">
-                        Get your free API key: <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
-                        <br><strong>Note:</strong> Your API key is private and only you can use it.
-                    </p>
-                    <?php if (!empty($api_key)): ?>
-                        <p style="color: #16a34a; font-weight: 600;">✓ API Key configured</p>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <tr>
-                <th><label for="aiwa_preferred_language">Preferred Language</label></th>
-                <td>
-                    <select name="aiwa_preferred_language" id="aiwa_preferred_language">
-                        <?php
-                        $languages = array(
-                            'en' => 'English', 
-                            'es' => 'Spanish (Español)', 
-                            'fr' => 'French (Français)', 
-                            'de' => 'German (Deutsch)',
-                            'it' => 'Italian (Italiano)', 
-                            'pt' => 'Portuguese (Português)', 
-                            'hi' => 'Hindi (हिंदी)', 
-                            'bn' => 'Bengali (বাংলা)',
-                            'pa' => 'Punjabi (ਪੰਜਾਬੀ)', 
-                            'te' => 'Telugu (తెలుగు)', 
-                            'mr' => 'Marathi (मराठी)', 
-                            'ta' => 'Tamil (தமிழ்)',
-                            'ur' => 'Urdu (اردو)', 
-                            'gu' => 'Gujarati (ગુજરાતી)', 
-                            'kn' => 'Kannada (ಕನ್ನಡ)', 
-                            'ml' => 'Malayalam (മലയാളം)',
-                            'ar' => 'Arabic (العربية)', 
-                            'ja' => 'Japanese (日本語)', 
-                            'ko' => 'Korean (한국어)', 
-                            'zh' => 'Chinese (中文)',
-                            'ru' => 'Russian (Русский)', 
-                            'tr' => 'Turkish (Türkçe)', 
-                            'vi' => 'Vietnamese (Tiếng Việt)'
-                        );
-                        
-                        foreach ($languages as $code => $name) {
-                            $selected = ($code === $preferred_lang) ? 'selected' : '';
-                            echo "<option value=\"" . esc_attr($code) . "\" {$selected}>" . esc_html($name) . "</option>";
-                        }
-                        ?>
-                    </select>
-                    <p class="description">Default language for AI writing suggestions</p>
-                </td>
-            </tr>
-        </table>
+        <div class="wrap">
+            <h1>🤖 AI Writing Assistant Settings</h1>
+            <p>Configure your personal AI writing assistant powered by Google Gemini API.</p>
+            
+            <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+                <input type="hidden" name="action" value="aiwa_save_settings">
+                <?php wp_nonce_field('aiwa_settings', 'aiwa_settings_nonce'); ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="aiwa_gemini_api_key">Google Gemini API Key</label>
+                        </th>
+                        <td>
+                            <input type="text" 
+                                   name="aiwa_gemini_api_key" 
+                                   id="aiwa_gemini_api_key" 
+                                   value="<?php echo esc_attr($api_key); ?>" 
+                                   class="regular-text"
+                                   placeholder="AIzaSy...">
+                            <p class="description">
+                                Don't have an API key? Get your free API key from: 
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-weight: 600;">Google AI Studio →</a>
+                            </p>
+                            <?php if (!empty($api_key)): ?>
+                                <p style="color: #16a34a; font-weight: 600; margin-top: 10px;">
+                                    ✓ API Key is configured and ready to use!
+                                </p>
+                            <?php else: ?>
+                                <p style="color: #f59e0b; font-weight: 600; margin-top: 10px;">
+                                    ⚠ Please add your API key to start using AI features
+                                </p>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="aiwa_preferred_language">Preferred Language</label>
+                        </th>
+                        <td>
+                            <select name="aiwa_preferred_language" id="aiwa_preferred_language" class="regular-text">
+                                <?php
+                                $languages = array(
+                                    'en' => 'English', 
+                                    'hi' => 'Hindi (हिंदी)', 
+                                    'bn' => 'Bengali (বাংলা)',
+                                    'pa' => 'Punjabi (ਪੰਜਾਬੀ)', 
+                                    'te' => 'Telugu (తెలుగు)', 
+                                    'mr' => 'Marathi (मराठी)', 
+                                    'ta' => 'Tamil (தமிழ்)',
+                                    'ur' => 'Urdu (اردو)', 
+                                    'gu' => 'Gujarati (ગુજરાતી)',
+                                    'kn' => 'Kannada (ಕನ್ನಡ)', 
+                                    'ml' => 'Malayalam (മലയാളം)',
+                                    'es' => 'Spanish (Español)', 
+                                    'fr' => 'French (Français)', 
+                                    'de' => 'German (Deutsch)',
+                                    'ar' => 'Arabic (العربية)', 
+                                    'ja' => 'Japanese (日本語)',
+                                    'ko' => 'Korean (한국어)', 
+                                    'zh' => 'Chinese (中文)',
+                                    'ru' => 'Russian (Русский)', 
+                                    'pt' => 'Portuguese (Português)'
+                                );
+                                
+                                foreach ($languages as $code => $name) {
+                                    $selected = ($code === $preferred_lang) ? 'selected' : '';
+                                    echo "<option value=\"" . esc_attr($code) . "\" {$selected}>" . esc_html($name) . "</option>";
+                                }
+                                ?>
+                            </select>
+                            <p class="description">Select your preferred language for AI-generated content</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button('Save Settings'); ?>
+            </form>
+            
+            <hr style="margin: 40px 0;">
+            
+            <h2>📖 How to Use</h2>
+            <div style="background: #f0f6fc; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                <ol style="margin: 0; padding-left: 20px;">
+                    <li style="margin-bottom: 10px;">
+                        <strong>Add your API key above</strong> and click "Save Settings"
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <strong>Go to Posts → Add New</strong> (or edit any existing post)
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <strong>Click the three dots (⋮)</strong> at the top right of the editor
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <strong>Select "AI Writing Assistant"</strong> from the menu
+                    </li>
+                    <li>
+                        <strong>Start using AI features:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>✓ Grammar Check - Analyze your content for errors</li>
+                            <li>✏️ Rewrite - Change tone and style</li>
+                            <li>✨ Generate - Create new content from prompts</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+            
+            <hr style="margin: 40px 0;">
+            
+            <h2>ℹ️ About</h2>
+            <p style="color: #666;">
+                <strong>WP Content Helper</strong> is a powerful AI writing assistant plugin for WordPress.<br>
+                Created by <a href="https://github.com/krtrimtech" target="_blank">Krtrim</a> | 
+                Contributor: <a href="https://shyanukant.github.io/" target="_blank">Shyanukant Rathi</a><br>
+                <a href="https://github.com/krtrimtech/wp-content-helper" target="_blank">GitHub Repository →</a>
+            </p>
+        </div>
+        
+        <style>
+            .wrap h1 { font-size: 28px; margin-bottom: 10px; }
+            .wrap > p { font-size: 16px; color: #666; margin-bottom: 30px; }
+            .form-table th { width: 200px; font-weight: 600; }
+            .form-table input[type="text"], .form-table select { padding: 8px; }
+        </style>
         <?php
     }
     
-    public function save_api_key($user_id) {
-        if (!current_user_can('edit_user', $user_id)) return;
+    /**
+     * Save settings
+     */
+    public function save_settings() {
+        // Check nonce
+        if (!isset($_POST['aiwa_settings_nonce']) || !wp_verify_nonce($_POST['aiwa_settings_nonce'], 'aiwa_settings')) {
+            wp_die('Security check failed');
+        }
         
+        // Check user capability
+        if (!current_user_can('edit_posts')) {
+            wp_die('You do not have permission to do this');
+        }
+        
+        $user_id = get_current_user_id();
+        
+        // Save API key
         if (isset($_POST['aiwa_gemini_api_key'])) {
             update_user_meta($user_id, 'aiwa_gemini_api_key', sanitize_text_field($_POST['aiwa_gemini_api_key']));
         }
+        
+        // Save language
         if (isset($_POST['aiwa_preferred_language'])) {
             update_user_meta($user_id, 'aiwa_preferred_language', sanitize_text_field($_POST['aiwa_preferred_language']));
         }
+        
+        // Redirect with success message
+        wp_redirect(add_query_arg('settings-updated', 'true', admin_url('admin.php?page=wp-content-helper')));
+        exit;
     }
     
+    /**
+     * Show admin notice if API key not set
+     */
     public function api_key_notice() {
         $screen = get_current_screen();
-        if (!$screen || !in_array($screen->id, array('post', 'page'))) return;
+        
+        if (!$screen) return;
+        if (!in_array($screen->id, array('post', 'page'))) return;
         
         $api_key = get_user_meta(get_current_user_id(), 'aiwa_gemini_api_key', true);
         if (empty($api_key)) {
             ?>
             <div class="notice notice-warning is-dismissible">
-                <p><strong>WP Content Helper:</strong> Add your Gemini API key in your 
-                <a href="<?php echo esc_url(get_edit_profile_url()); ?>">profile settings</a> to use AI features.</p>
+                <p>
+                    <strong>🤖 WP Content Helper:</strong> Configure your AI Assistant settings to start using AI features.
+                    <a href="<?php echo admin_url('admin.php?page=wp-content-helper'); ?>" style="font-weight: 600;">Go to Settings →</a>
+                </p>
             </div>
             <?php
         }
@@ -241,6 +364,7 @@ class AIWA_Gutenberg {
         wp_enqueue_script('wp-components');
         wp_enqueue_script('wp-data');
         
+        // Complete JavaScript with all 3 tabs
         wp_add_inline_script('wp-plugins', "
             (function(wp) {
                 const { registerPlugin } = wp.plugins;
@@ -258,7 +382,7 @@ class AIWA_Gutenberg {
                     const [language, setLanguage] = useState('{$preferred_language}');
                     
                     const hasApiKey = " . (empty($api_key) ? 'false' : 'true') . ";
-                    const profileUrl = '" . esc_url(get_edit_profile_url($user_id)) . "';
+                    const settingsUrl = '" . admin_url('admin.php?page=wp-content-helper') . "';
                     
                     const getContent = () => {
                         const editor = wp.data.select('core/editor');
@@ -400,7 +524,7 @@ class AIWA_Gutenberg {
                             { id: 'generate', label: '✨ Generate' }
                         ];
                         
-                        return el('div', { style: { display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '2px solid #e5e7eb' } },
+                        return el('div', { style: { display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '2px solid #e5e7eb' } },
                             tabs.map(tab => 
                                 el(Button, {
                                     key: tab.id,
@@ -425,41 +549,42 @@ class AIWA_Gutenberg {
                     
                     const renderGrammarTab = () => {
                         return el(Fragment, {},
-                            el('p', { style: { marginBottom: '15px', color: '#64748b' } }, 'Check grammar and get suggestions'),
+                            el('p', { style: { marginBottom: '15px', color: '#64748b', fontSize: '13px' } }, 'Check grammar, spelling, and style'),
                             el(Button, {
                                 isPrimary: true,
                                 onClick: checkGrammar,
                                 disabled: isLoading,
-                                style: { width: '100%', marginBottom: '15px' }
+                                style: { width: '100%', marginBottom: '15px', justifyContent: 'center' }
                             }, isLoading ? 'Analyzing...' : '🔍 Check Grammar'),
                             
                             result && result.errors && el('div', { style: { marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' } },
                                 el('div', { style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '15px', borderRadius: '8px', marginBottom: '15px' } },
-                                    el('h3', { style: { margin: '0 0 5px 0' } }, 'Score: ' + result.overall_score + '/100'),
-                                    el('p', { style: { margin: '0' } }, result.summary)
+                                    el('h3', { style: { margin: '0 0 8px 0', fontSize: '18px' } }, 'Score: ' + result.overall_score + '/100'),
+                                    el('p', { style: { margin: '0', fontSize: '14px' } }, result.summary)
                                 ),
                                 result.errors.length > 0 ?
                                     el('div', {},
-                                        el('h4', { style: { marginTop: '0' } }, 'Suggestions:'),
-                                        result.errors.map((err, idx) => 
+                                        el('h4', { style: { marginTop: '0', fontSize: '14px' } }, 'Suggestions:'),
+                                        result.errors.slice(0, 10).map((err, idx) => 
                                             el('div', { 
                                                 key: idx, 
                                                 style: { 
                                                     background: 'white', 
-                                                    padding: '12px', 
-                                                    marginBottom: '10px', 
+                                                    padding: '10px', 
+                                                    marginBottom: '8px', 
                                                     borderRadius: '6px', 
-                                                    borderLeft: '4px solid #f59e0b' 
+                                                    borderLeft: '4px solid #f59e0b',
+                                                    fontSize: '13px'
                                                 } 
                                             },
-                                                el('div', { style: { fontWeight: 'bold', color: '#f59e0b', marginBottom: '5px' } }, err.type),
+                                                el('div', { style: { fontWeight: 'bold', color: '#f59e0b', marginBottom: '5px', textTransform: 'uppercase', fontSize: '11px' } }, err.type),
                                                 el('div', { style: { marginBottom: '5px' } }, el('strong', {}, 'Original: '), err.original),
-                                                el('div', { style: { marginBottom: '5px' } }, el('strong', {}, 'Fix: '), err.suggestion),
-                                                el('p', { style: { margin: '5px 0 0 0', fontSize: '13px', color: '#64748b' } }, err.explanation)
+                                                el('div', { style: { marginBottom: '5px', color: '#16a34a' } }, el('strong', {}, 'Fix: '), err.suggestion),
+                                                err.explanation && el('p', { style: { margin: '5px 0 0 0', fontSize: '12px', color: '#64748b', fontStyle: 'italic' } }, err.explanation)
                                             )
                                         )
                                     ) :
-                                    el('p', { style: { color: '#16a34a', fontWeight: '600' } }, '✓ No errors found!')
+                                    el('p', { style: { color: '#16a34a', fontWeight: '600', textAlign: 'center' } }, '✓ No errors found!')
                             )
                         );
                     };
@@ -484,17 +609,19 @@ class AIWA_Gutenberg {
                                 isPrimary: true,
                                 onClick: rewriteContent,
                                 disabled: isLoading,
-                                style: { width: '100%' }
-                            }, isLoading ? 'Rewriting...' : '✏️ Rewrite Content'),
+                                style: { width: '100%', justifyContent: 'center' }
+                            }, isLoading ? 'Rewriting...' : '✏️ Rewrite'),
                             
                             result && result.rewritten && el('div', { style: { marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' } },
-                                el('div', { style: { background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '10px', lineHeight: '1.6' } }, 
+                                el('h4', { style: { marginTop: 0, fontSize: '14px' } }, 'Rewritten:'),
+                                el('div', { style: { background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '10px', lineHeight: '1.6', fontSize: '14px' } }, 
                                     result.rewritten
                                 ),
                                 el(Button, { 
                                     onClick: () => copyToClipboard(result.rewritten),
-                                    isSecondary: true
-                                }, '📋 Copy to Clipboard')
+                                    isSecondary: true,
+                                    style: { width: '100%' }
+                                }, '📋 Copy')
                             )
                         );
                     };
@@ -505,38 +632,40 @@ class AIWA_Gutenberg {
                                 label: 'What do you want to write about?',
                                 value: prompt,
                                 onChange: setPrompt,
-                                placeholder: 'e.g., Write an introduction about artificial intelligence...',
+                                placeholder: 'e.g., Write an introduction about...',
                                 rows: 4
                             }),
                             el(Button, {
                                 isPrimary: true,
                                 onClick: generateContent,
-                                disabled: isLoading,
-                                style: { width: '100%' }
-                            }, isLoading ? 'Generating...' : '✨ Generate Content'),
+                                disabled: isLoading || !prompt.trim(),
+                                style: { width: '100%', justifyContent: 'center' }
+                            }, isLoading ? 'Generating...' : '✨ Generate'),
                             
                             result && result.generated && el('div', { style: { marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' } },
-                                el('div', { style: { background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '10px', lineHeight: '1.6' } }, 
+                                el('h4', { style: { marginTop: 0, fontSize: '14px' } }, 'Generated:'),
+                                el('div', { style: { background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '10px', lineHeight: '1.6', fontSize: '14px' } }, 
                                     result.generated
                                 ),
                                 el(Button, { 
                                     onClick: () => copyToClipboard(result.generated),
-                                    isSecondary: true
-                                }, '📋 Copy to Clipboard')
+                                    isSecondary: true,
+                                    style: { width: '100%' }
+                                }, '📋 Copy')
                             )
                         );
                     };
                     
                     return el(Fragment, {},
                         el(PluginSidebarMoreMenuItem, { 
-                            target: 'ai-assistant-sidebar', 
+                            target: 'ai-writing-assistant-sidebar', 
                             icon: 'edit' 
                         }, 'AI Writing Assistant'),
                         
                         el(PluginSidebar, { 
-                            name: 'ai-assistant-sidebar', 
+                            name: 'ai-writing-assistant-sidebar', 
                             icon: 'edit', 
-                            title: 'AI Writing Assistant' 
+                            title: '🤖 AI Writing Assistant' 
                         },
                             el(PanelBody, {},
                                 !hasApiKey ?
@@ -544,14 +673,22 @@ class AIWA_Gutenberg {
                                         status: 'warning', 
                                         isDismissible: false 
                                     },
-                                        el('p', {}, 
-                                            'Please add your Gemini API key in your ',
+                                        el('div', {},
+                                            el('p', { style: { margin: '0 0 8px 0' } }, 
+                                                '⚠️ Please configure your AI Assistant settings first.'
+                                            ),
                                             el('a', { 
-                                                href: profileUrl, 
-                                                target: '_blank',
-                                                style: { textDecoration: 'underline' }
-                                            }, 'profile settings'),
-                                            ' to use AI features.'
+                                                href: settingsUrl,
+                                                style: { 
+                                                    display: 'inline-block',
+                                                    padding: '6px 12px',
+                                                    background: '#667eea',
+                                                    color: 'white',
+                                                    borderRadius: '4px',
+                                                    textDecoration: 'none',
+                                                    fontSize: '13px'
+                                                }
+                                            }, '➜ Go to Settings')
                                         )
                                     ) :
                                     el(Fragment, {},
@@ -609,7 +746,7 @@ class AI_Writing_Assistant {
         $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
         
         if (empty($api_key)) {
-            wp_send_json_error(array('message' => 'Please add your API key in profile settings.'));
+            wp_send_json_error(array('message' => 'Please add your API key in settings.'));
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
