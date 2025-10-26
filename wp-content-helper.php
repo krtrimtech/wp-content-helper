@@ -3,7 +3,7 @@
  * Plugin Name: WP Content Helper
  * Plugin URI: https://github.com/krtrimtech/wp-content-helper
  * Description: Grammarly-like AI writing assistant with Google Gemini API. Shows green icon in editor.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: Krtrim (Shyanukant Rathi)
  * Author URI: https://shyanukant.github.io/
  * License: GPL v2 or later
@@ -373,6 +373,10 @@ class AIWA_Editor_Button {
         jQuery(document).ready(function($) {
             const hasKey = <?php echo $api_key ? 'true' : 'false'; ?>;
             const settingsUrl = '<?php echo admin_url('admin.php?page=wp-content-helper'); ?>';
+            const ajaxUrl = '<?php echo admin_url('admin-ajax.php'); ?>';
+            const nonce = '<?php echo wp_create_nonce('aiwa'); ?>';
+            
+            console.log('🤖 AI Assistant loaded', {hasKey, ajaxUrl, nonce});
             
             // Toggle modal
             $('#aiwa-green-btn, #aiwa-overlay').click(function() {
@@ -416,20 +420,31 @@ class AIWA_Editor_Button {
                 btn.prop('disabled', true).text('Improving...');
                 $('#result-improve').html('<div style="text-align:center;color:#16a34a;">🔄 Processing...</div>');
                 
-                $.post(ajaxurl, {
-                    action: 'aiwa_improve',
-                    nonce: '<?php echo wp_create_nonce('aiwa'); ?>',
-                    text: text
-                }, function(res) {
-                    if (res.success) {
-                        $('#result-improve').html('<div class="aiwa-result"><strong>Improved:</strong><br>' + res.data + '</div>');
-                    } else {
-                        $('#result-improve').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
+                console.log('Sending improve request:', {text, nonce});
+                
+                $.ajax({
+                    url: ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'aiwa_improve',
+                        nonce: nonce,
+                        text: text
+                    },
+                    success: function(res) {
+                        console.log('✓ Improve response:', res);
+                        if (res.success) {
+                            $('#result-improve').html('<div class="aiwa-result"><strong>Improved:</strong><br>' + res.data + '</div>');
+                        } else {
+                            $('#result-improve').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ AJAX Error:', {xhr, status, error, response: xhr.responseText});
+                        $('#result-improve').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error: ' + error + '</div>');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).text('✨ Improve Text');
                     }
-                }).fail(function() {
-                    $('#result-improve').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error</div>');
-                }).always(function() {
-                    btn.prop('disabled', false).text('✨ Improve Text');
                 });
             });
             
@@ -448,34 +463,45 @@ class AIWA_Editor_Button {
                 btn.prop('disabled', true).text('Checking...');
                 $('#result-grammar').html('<div style="text-align:center;color:#16a34a;">🔄 Analyzing...</div>');
                 
-                $.post(ajaxurl, {
-                    action: 'aiwa_grammar',
-                    nonce: '<?php echo wp_create_nonce('aiwa'); ?>',
-                    text: text
-                }, function(res) {
-                    if (res.success) {
-                        let html = '<div class="aiwa-result"><strong>Score: ' + (res.data.score || 90) + '/100</strong>';
-                        if (res.data.errors && res.data.errors.length > 0) {
-                            html += '<hr style="margin:10px 0;">';
-                            res.data.errors.forEach(function(err) {
-                                html += '<div style="margin:10px 0;padding:8px;background:#fff;border-left:3px solid #f59e0b;border-radius:4px;">';
-                                html += '<strong style="color:#f59e0b;">' + err.type + '</strong><br>';
-                                html += '<div style="margin:5px 0;"><strong>Original:</strong> ' + err.original + '</div>';
-                                html += '<div style="color:#16a34a;"><strong>Fix:</strong> ' + err.suggestion + '</div>';
-                                html += '</div>';
-                            });
+                console.log('Sending grammar request:', {text, nonce});
+                
+                $.ajax({
+                    url: ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'aiwa_grammar',
+                        nonce: nonce,
+                        text: text
+                    },
+                    success: function(res) {
+                        console.log('✓ Grammar response:', res);
+                        if (res.success) {
+                            let html = '<div class="aiwa-result"><strong>Score: ' + (res.data.score || 90) + '/100</strong>';
+                            if (res.data.errors && res.data.errors.length > 0) {
+                                html += '<hr style="margin:10px 0;">';
+                                res.data.errors.forEach(function(err) {
+                                    html += '<div style="margin:10px 0;padding:8px;background:#fff;border-left:3px solid #f59e0b;border-radius:4px;">';
+                                    html += '<strong style="color:#f59e0b;">' + err.type + '</strong><br>';
+                                    html += '<div style="margin:5px 0;"><strong>Original:</strong> ' + err.original + '</div>';
+                                    html += '<div style="color:#16a34a;"><strong>Fix:</strong> ' + err.suggestion + '</div>';
+                                    html += '</div>';
+                                });
+                            } else {
+                                html += '<div style="color:#16a34a;margin-top:10px;">✓ No errors found!</div>';
+                            }
+                            html += '</div>';
+                            $('#result-grammar').html(html);
                         } else {
-                            html += '<div style="color:#16a34a;margin-top:10px;">✓ No errors found!</div>';
+                            $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
                         }
-                        html += '</div>';
-                        $('#result-grammar').html(html);
-                    } else {
-                        $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ AJAX Error:', {xhr, status, error, response: xhr.responseText});
+                        $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error: ' + error + '</div>');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).text('✓ Check Grammar');
                     }
-                }).fail(function() {
-                    $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error</div>');
-                }).always(function() {
-                    btn.prop('disabled', false).text('✓ Check Grammar');
                 });
             });
             
@@ -495,21 +521,32 @@ class AIWA_Editor_Button {
                 btn.prop('disabled', true).text('Rewriting...');
                 $('#result-rewrite').html('<div style="text-align:center;color:#16a34a;">🔄 Rewriting...</div>');
                 
-                $.post(ajaxurl, {
-                    action: 'aiwa_rewrite',
-                    nonce: '<?php echo wp_create_nonce('aiwa'); ?>',
-                    text: text,
-                    tone: tone
-                }, function(res) {
-                    if (res.success) {
-                        $('#result-rewrite').html('<div class="aiwa-result"><strong>Rewritten:</strong><br>' + res.data + '</div>');
-                    } else {
-                        $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
+                console.log('Sending rewrite request:', {text, tone, nonce});
+                
+                $.ajax({
+                    url: ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'aiwa_rewrite',
+                        nonce: nonce,
+                        text: text,
+                        tone: tone
+                    },
+                    success: function(res) {
+                        console.log('✓ Rewrite response:', res);
+                        if (res.success) {
+                            $('#result-rewrite').html('<div class="aiwa-result"><strong>Rewritten:</strong><br>' + res.data + '</div>');
+                        } else {
+                            $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ AJAX Error:', {xhr, status, error, response: xhr.responseText});
+                        $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error: ' + error + '</div>');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).text('✏️ Rewrite');
                     }
-                }).fail(function() {
-                    $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error</div>');
-                }).always(function() {
-                    btn.prop('disabled', false).text('✏️ Rewrite');
                 });
             });
         });
@@ -538,19 +575,18 @@ class AIWA_Ajax {
     }
     
     public function improve() {
--        check_ajax_referer('aiwa');
-+        check_ajax_referer('aiwa', 'nonce');
+        check_ajax_referer('aiwa', 'nonce');
         
         $user_id = get_current_user_id();
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key');
+            wp_send_json_error('No API key configured. Please add it in settings.');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
         if (!$text) {
-            wp_send_json_error('No text');
+            wp_send_json_error('No text provided');
         }
         
         $gemini = new AIWA_Gemini_API($api_key);
@@ -564,19 +600,18 @@ class AIWA_Ajax {
     }
     
     public function grammar() {
--        check_ajax_referer('aiwa');
-+        check_ajax_referer('aiwa', 'nonce');
+        check_ajax_referer('aiwa', 'nonce');
         
         $user_id = get_current_user_id();
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key');
+            wp_send_json_error('No API key configured. Please add it in settings.');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
         if (!$text) {
-            wp_send_json_error('No text');
+            wp_send_json_error('No text provided');
         }
         
         $gemini = new AIWA_Gemini_API($api_key);
@@ -590,21 +625,20 @@ class AIWA_Ajax {
     }
     
     public function rewrite() {
--        check_ajax_referer('aiwa');
-+        check_ajax_referer('aiwa', 'nonce');
+        check_ajax_referer('aiwa', 'nonce');
         
         $user_id = get_current_user_id();
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key');
+            wp_send_json_error('No API key configured. Please add it in settings.');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
         $tone = isset($_POST['tone']) ? sanitize_text_field($_POST['tone']) : 'professional';
         
         if (!$text) {
-            wp_send_json_error('No text');
+            wp_send_json_error('No text provided');
         }
         
         $gemini = new AIWA_Gemini_API($api_key);
