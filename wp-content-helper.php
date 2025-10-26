@@ -112,7 +112,26 @@ class AIWA_Settings {
     }
     
     public function add_menu() {
-        add_menu_page('AI Assistant', 'AI Assistant', 'edit_posts', 'wp-content-helper', array($this, 'render'), 'dashicons-edit', 30);
+        // Settings page
+        add_menu_page(
+            'AI Assistant', 
+            'AI Assistant', 
+            'edit_posts', 
+            'wp-content-helper', 
+            array($this, 'render'), 
+            'dashicons-edit', 
+            30
+        );
+        
+        // Instructions & About submenu
+        add_submenu_page(
+            'wp-content-helper',
+            'Instructions & About',
+            'Instructions',
+            'edit_posts',
+            'wp-content-helper-instructions',
+            array($this, 'render_instructions')
+        );
     }
     
     public function render() {
@@ -120,30 +139,327 @@ class AIWA_Settings {
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (isset($_GET['saved'])) {
-            echo '<div class="notice notice-success"><p><strong>Saved!</strong></p></div>';
+            echo '<div class="notice notice-success"><p><strong>Settings saved!</strong></p></div>';
         }
         ?>
         <div class="wrap">
-            <h1>🤖 AI Writing Assistant</h1>
+            <h1>🤖 AI Writing Assistant - Settings</h1>
             <p>Auto-detects language (Hindi, English, etc.) and corrects directly in editor</p>
+            
             <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
                 <input type="hidden" name="action" value="aiwa_save">
                 <?php wp_nonce_field('aiwa'); ?>
+                
                 <table class="form-table">
                     <tr>
-                        <th>Gemini API Key</th>
+                        <th scope="row">
+                            <label for="api_key">Google Gemini API Key</label>
+                        </th>
                         <td>
-                            <input type="text" name="api_key" value="<?php echo esc_attr($api_key); ?>" class="regular-text">
-                            <p class="description">Get free key: <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></p>
+                            <input type="text" name="api_key" id="api_key" value="<?php echo esc_attr($api_key); ?>" class="regular-text">
+                            <p class="description">
+                                Get your free API key from: 
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-weight:600;">
+                                    Google AI Studio →
+                                </a>
+                            </p>
                             <?php if ($api_key): ?>
-                                <p style="color:#16a34a;font-weight:600;">✓ Configured</p>
+                                <p style="color:#16a34a;font-weight:600;margin-top:10px;">✓ API Key is configured!</p>
+                            <?php else: ?>
+                                <p style="color:#f59e0b;font-weight:600;margin-top:10px;">⚠ Please add your API key to use AI features</p>
                             <?php endif; ?>
                         </td>
                     </tr>
                 </table>
-                <?php submit_button(); ?>
+                
+                <?php submit_button('Save Settings'); ?>
             </form>
+            
+            <hr style="margin:40px 0;">
+            
+            <div style="background:#f0f6fc;padding:20px;border-radius:8px;border-left:4px solid #667eea;">
+                <h2 style="margin-top:0;">📖 Quick Start Guide</h2>
+                <ol style="line-height:1.8;">
+                    <li><strong>Add your API key above</strong> and save</li>
+                    <li><strong>Go to any Post/Page editor</strong></li>
+                    <li><strong>Look for the green 🤖 button</strong> at bottom-right corner</li>
+                    <li><strong>Select text</strong> in your editor</li>
+                    <li><strong>Click the 🤖 button</strong> to open AI Assistant</li>
+                    <li><strong>Choose action:</strong> Improve, Grammar Check, or Rewrite</li>
+                    <li><strong>Click "Replace Selected Text"</strong> to apply changes</li>
+                </ol>
+                
+                <p style="margin-bottom:0;">
+                    <a href="<?php echo admin_url('admin.php?page=wp-content-helper-instructions'); ?>" class="button button-primary">
+                        📚 View Full Instructions & About
+                    </a>
+                </p>
+            </div>
         </div>
+        <?php
+    }
+    
+    public function render_instructions() {
+        ?>
+        <div class="wrap">
+            <h1>🤖 WP Content Helper - Instructions & About</h1>
+            
+            <div style="max-width:900px;">
+                
+                <!-- About Section -->
+                <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:white;padding:30px;border-radius:12px;margin:20px 0;">
+                    <h2 style="color:white;margin-top:0;">About WP Content Helper</h2>
+                    <p style="font-size:16px;line-height:1.6;margin:0;">
+                        A powerful Grammarly-like AI writing assistant for WordPress that helps you write better content in any language. 
+                        Uses Google Gemini AI to automatically detect your language and provide intelligent suggestions.
+                    </p>
+                </div>
+                
+                <!-- Features -->
+                <div style="background:#fff;padding:25px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
+                    <h2>✨ Features</h2>
+                    <ul style="line-height:1.8;font-size:15px;">
+                        <li>🌍 <strong>Multi-language Support</strong> - Auto-detects Hindi, English, and other languages</li>
+                        <li>✏️ <strong>AI Text Improvement</strong> - Enhance clarity, grammar, and flow</li>
+                        <li>✓ <strong>Grammar Checking</strong> - Find and fix errors with explanations</li>
+                        <li>🎨 <strong>Content Rewriting</strong> - Change tone: professional, casual, friendly, etc.</li>
+                        <li>🔄 <strong>Direct Text Replacement</strong> - Works like Grammarly - replaces text in-place</li>
+                        <li>🔐 <strong>Private API Keys</strong> - Each user uses their own Gemini API key</li>
+                        <li>🎯 <strong>Works Everywhere</strong> - Compatible with Gutenberg, Classic Editor, and Elementor</li>
+                    </ul>
+                </div>
+                
+                <!-- How to Use -->
+                <div style="background:#fff;padding:25px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
+                    <h2>📖 How to Use</h2>
+                    
+                    <h3 style="color:#667eea;">Step 1: Get Your API Key</h3>
+                    <ol style="line-height:1.8;">
+                        <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-weight:600;">Google AI Studio</a></li>
+                        <li>Sign in with your Google account</li>
+                        <li>Click "Create API Key"</li>
+                        <li>Copy the API key</li>
+                    </ol>
+                    
+                    <h3 style="color:#667eea;">Step 2: Configure Plugin</h3>
+                    <ol style="line-height:1.8;">
+                        <li>Go to <strong>WordPress Admin → AI Assistant → Settings</strong></li>
+                        <li>Paste your API key in the field</li>
+                        <li>Click "Save Settings"</li>
+                    </ol>
+                    
+                    <h3 style="color:#667eea;">Step 3: Use AI Features</h3>
+                    <ol style="line-height:1.8;">
+                        <li><strong>Open any post/page editor</strong> (Gutenberg or Classic)</li>
+                        <li><strong>Write or select text</strong> you want to improve</li>
+                        <li><strong>Click the green 🤖 button</strong> at bottom-right corner</li>
+                        <li><strong>The selected text will auto-fill</strong> in the modal</li>
+                        <li><strong>Choose an action:</strong>
+                            <ul style="margin-top:8px;">
+                                <li><strong>✨ Improve</strong> - Enhance clarity and grammar</li>
+                                <li><strong>✓ Grammar</strong> - Check for errors and get suggestions</li>
+                                <li><strong>✏️ Rewrite</strong> - Change tone (professional, casual, etc.)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Click "📝 Replace Selected Text"</strong> to apply changes</li>
+                    </ol>
+                    
+                    <div style="background:#f0fdf4;padding:15px;border-left:4px solid #16a34a;border-radius:4px;margin-top:20px;">
+                        <strong style="color:#16a34a;">💡 Pro Tip:</strong> The AI automatically detects your language! 
+                        Write in Hindi (हिंदी), English, or any supported language and get suggestions in the same language.
+                    </div>
+                </div>
+                
+                <!-- Screenshots/Visual Guide -->
+                <div style="background:#fff;padding:25px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
+                    <h2>📸 Visual Guide</h2>
+                    
+                    <div style="margin:20px 0;">
+                        <h3 style="font-size:16px;">1. Green AI Button Location</h3>
+                        <div style="background:#f8f9fa;padding:40px;text-align:center;border:2px dashed #e5e7eb;border-radius:8px;">
+                            <div style="display:inline-block;width:70px;height:70px;background:#16a34a;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 20px rgba(22,163,74,0.5);font-size:32px;display:flex;align-items:center;justify-content:center;">
+                                🤖
+                            </div>
+                            <p style="margin-top:15px;color:#64748b;font-style:italic;">Green button appears at bottom-right of editor</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin:20px 0;">
+                        <h3 style="font-size:16px;">2. AI Assistant Modal</h3>
+                        <div style="background:#f8f9fa;padding:20px;border:2px solid #e5e7eb;border-radius:8px;">
+                            <div style="background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:white;padding:15px;border-radius:8px 8px 0 0;font-weight:600;">
+                                🤖 AI Writing Assistant
+                            </div>
+                            <div style="background:white;padding:20px;border-radius:0 0 8px 8px;">
+                                <div style="display:flex;gap:10px;border-bottom:2px solid #e5e7eb;padding-bottom:10px;margin-bottom:15px;">
+                                    <span style="padding:8px 12px;background:#16a34a;color:white;border-radius:4px;font-size:13px;font-weight:600;">✨ Improve</span>
+                                    <span style="padding:8px 12px;color:#64748b;font-size:13px;font-weight:600;">✓ Grammar</span>
+                                    <span style="padding:8px 12px;color:#64748b;font-size:13px;font-weight:600;">✏️ Rewrite</span>
+                                </div>
+                                <p style="color:#64748b;font-size:13px;margin:10px 0;">Select text in editor, then improve</p>
+                                <div style="border:2px solid #e5e7eb;padding:10px;border-radius:6px;color:#94a3b8;font-style:italic;">
+                                    Your selected text appears here...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Supported Languages -->
+                <div style="background:#fff;padding:25px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
+                    <h2>🌍 Supported Languages</h2>
+                    <p>The AI automatically detects and responds in these languages:</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:15px;">
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇬🇧 English</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇮🇳 Hindi (हिंदी)</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇮🇳 Bengali (বাংলা)</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇮🇳 Telugu (తెలుగు)</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇮🇳 Marathi (मराठी)</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇪🇸 Spanish</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇫🇷 French</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">🇩🇪 German</div>
+                        <div style="padding:10px;background:#f8f9fa;border-radius:6px;">+ many more...</div>
+                    </div>
+                </div>
+                
+                <!-- Troubleshooting -->
+                <div style="background:#fff;padding:25px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
+                    <h2>🔧 Troubleshooting</h2>
+                    
+                    <div style="margin:15px 0;">
+                        <h4 style="color:#f59e0b;margin-bottom:8px;">❓ Green button not showing?</h4>
+                        <ul style="margin:5px 0 15px 20px;line-height:1.6;">
+                            <li>Make sure you're on a Post or Page edit screen</li>
+                            <li>Clear browser cache and reload</li>
+                            <li>Check if plugin is activated</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="margin:15px 0;">
+                        <h4 style="color:#f59e0b;margin-bottom:8px;">❓ "Network error" message?</h4>
+                        <ul style="margin:5px 0 15px 20px;line-height:1.6;">
+                            <li>Check if your API key is valid</li>
+                            <li>Make sure you have internet connection</li>
+                            <li>Try regenerating your API key from Google AI Studio</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="margin:15px 0;">
+                        <h4 style="color:#f59e0b;margin-bottom:8px;">❓ Text not replacing?</h4>
+                        <ul style="margin:5px 0 15px 20px;line-height:1.6;">
+                            <li>Make sure you selected text before opening the modal</li>
+                            <li>Click directly on the "Replace Selected Text" button</li>
+                            <li>Try selecting text again and reopening the modal</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- About & Credits -->
+                <div style="background:#fff;padding:25px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
+                    <h2>ℹ️ About & Credits</h2>
+                    
+                    <table style="width:100%;line-height:2;">
+                        <tr>
+                            <td style="width:150px;"><strong>Plugin Name:</strong></td>
+                            <td>WP Content Helper</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Version:</strong></td>
+                            <td>1.5.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Created by:</strong></td>
+                            <td>
+                                <a href="https://github.com/krtrimtech" target="_blank" style="font-weight:600;">Krtrim</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Contributor:</strong></td>
+                            <td>
+                                <a href="https://shyanukant.github.io/" target="_blank" style="font-weight:600;">Shyanukant Rathi</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>GitHub:</strong></td>
+                            <td>
+                                <a href="https://github.com/krtrimtech/wp-content-helper" target="_blank" style="font-weight:600;">
+                                    github.com/krtrimtech/wp-content-helper →
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>License:</strong></td>
+                            <td>GPL v2 or later</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI Model:</strong></td>
+                            <td>Google Gemini 2.0 Flash</td>
+                        </tr>
+                    </table>
+                    
+                    <div style="margin-top:25px;padding:15px;background:#f0f6fc;border-left:4px solid #667eea;border-radius:4px;">
+                        <p style="margin:0;"><strong>💝 Support Development:</strong></p>
+                        <p style="margin:8px 0 0 0;">If you find this plugin helpful, please consider:</p>
+                        <ul style="margin:8px 0 0 20px;">
+                            <li>⭐ Star the project on <a href="https://github.com/krtrimtech/wp-content-helper" target="_blank">GitHub</a></li>
+                            <li>📝 Leave a review</li>
+                            <li>🐛 Report bugs or suggest features on GitHub</li>
+                            <li>🔗 Share with others who might find it useful</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- API Key Info -->
+                <div style="background:#fff;padding:25px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
+                    <h2>🔑 About API Keys</h2>
+                    <p><strong>Why do I need an API key?</strong></p>
+                    <p>This plugin uses Google's Gemini AI to process your text. Each user needs their own free API key from Google to ensure:</p>
+                    <ul style="line-height:1.8;">
+                        <li>🔐 <strong>Privacy</strong> - Your content goes directly to Google, not through our servers</li>
+                        <li>💰 <strong>No cost to you</strong> - Google provides generous free tier usage</li>
+                        <li>⚡ <strong>Better performance</strong> - Direct API calls are faster</li>
+                        <li>📊 <strong>Usage control</strong> - You control your own API usage limits</li>
+                    </ul>
+                    
+                    <p><strong>Is it really free?</strong></p>
+                    <p>Yes! Google Gemini provides a generous free tier that includes:</p>
+                    <ul>
+                        <li>60 requests per minute</li>
+                        <li>1,500 requests per day</li>
+                        <li>1 million tokens per month (plenty for most users)</li>
+                    </ul>
+                    
+                    <p style="margin-top:15px;">
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="button button-primary">
+                            Get Your Free API Key →
+                        </a>
+                    </p>
+                </div>
+                
+                <!-- Contact & Support -->
+                <div style="background:#fff;padding:25px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
+                    <h2>📞 Contact & Support</h2>
+                    <p>Need help or have questions?</p>
+                    <ul style="line-height:2;">
+                        <li>🐛 <strong>Report Issues:</strong> <a href="https://github.com/krtrimtech/wp-content-helper/issues" target="_blank">GitHub Issues</a></li>
+                        <li>💬 <strong>Discussions:</strong> <a href="https://github.com/krtrimtech/wp-content-helper/discussions" target="_blank">GitHub Discussions</a></li>
+                        <li>📧 <strong>Email:</strong> <a href="mailto:contact@krtrim.com">contact@krtrim.com</a></li>
+                        <li>🌐 <strong>Website:</strong> <a href="https://shyanukant.github.io/" target="_blank">shyanukant.github.io</a></li>
+                    </ul>
+                </div>
+                
+            </div>
+        </div>
+        
+        <style>
+            .wrap h2 { margin-top:25px; color:#1e293b; }
+            .wrap h3 { margin-top:20px; font-size:18px; }
+            .wrap h4 { margin-top:15px; font-size:16px; }
+            .wrap a { color:#667eea; text-decoration:none; }
+            .wrap a:hover { color:#5568d3; text-decoration:underline; }
+            .wrap code { background:#f1f5f9; padding:2px 6px; border-radius:3px; font-size:13px; }
+        </style>
         <?php
     }
     
@@ -159,7 +475,7 @@ class AIWA_Settings {
 }
 
 // ========================================
-// FLOATING GREEN BUTTON
+// FLOATING GREEN BUTTON (Keep the rest of your existing code)
 // ========================================
 class AIWA_Editor_Button {
     private static $instance = null;
@@ -379,9 +695,6 @@ class AIWA_Editor_Button {
             let savedSelection = null;
             let savedRange = null;
             
-            console.log('🤖 AI Assistant loaded - Grammarly-style text replacement');
-            
-            // Save selection when modal opens
             function saveSelection() {
                 const sel = window.getSelection();
                 if (sel.rangeCount > 0) {
@@ -392,36 +705,29 @@ class AIWA_Editor_Button {
                 return '';
             }
             
-            // Replace text at saved selection (LIKE GRAMMARLY!)
             function replaceAtSelection(newText) {
                 if (!savedRange) {
                     alert('No text selected. Please select text first.');
                     return false;
                 }
                 
-                // Restore the selection
                 const sel = window.getSelection();
                 sel.removeAllRanges();
                 sel.addRange(savedRange);
                 
-                // Delete the old content
                 savedRange.deleteContents();
                 
-                // Insert new text
                 const textNode = document.createTextNode(newText);
                 savedRange.insertNode(textNode);
                 
-                // Move cursor to end of inserted text
                 savedRange.setStartAfter(textNode);
                 savedRange.setEndAfter(textNode);
                 sel.removeAllRanges();
                 sel.addRange(savedRange);
                 
-                console.log('✓ Text replaced at selection');
                 return true;
             }
             
-            // Toggle modal
             $('#aiwa-green-btn').click(function() {
                 const selected = saveSelection();
                 $('#aiwa-modal, #aiwa-overlay').addClass('show');
@@ -436,7 +742,6 @@ class AIWA_Editor_Button {
                 $('#aiwa-modal, #aiwa-overlay').removeClass('show');
             });
             
-            // Tab switching
             $('.aiwa-tab').click(function() {
                 const tab = $(this).data('tab');
                 $('.aiwa-tab').removeClass('active');
@@ -449,7 +754,6 @@ class AIWA_Editor_Button {
                 }
             });
             
-            // Auto-fill on text selection
             $(document).on('mouseup keyup', function() {
                 if ($('#aiwa-modal').hasClass('show')) {
                     const selected = window.getSelection().toString().trim();
@@ -461,7 +765,6 @@ class AIWA_Editor_Button {
                 }
             });
             
-            // Improve
             $('#btn-improve').click(function() {
                 if (!hasKey) {
                     alert('Please add API key first!');
@@ -511,7 +814,6 @@ class AIWA_Editor_Button {
                 });
             });
             
-            // Grammar
             $('#btn-grammar').click(function() {
                 if (!hasKey) {
                     alert('Please add API key first!');
@@ -566,7 +868,6 @@ class AIWA_Editor_Button {
                 });
             });
             
-            // Rewrite
             $('#btn-rewrite').click(function() {
                 if (!hasKey) {
                     alert('Please add API key first!');
