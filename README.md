@@ -1,4 +1,5 @@
-# 🤖 WP Content Helper
+#  <img src="https://img.icons8.com/fluency/48/ai-agent.png" alt="AI Assistant"> WP Content Helper [![Sponsor](https://img.shields.io/badge/💖%20Sponsor-Support%20My%20Work-ff69b4?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/yourusername)
+
 
 > A powerful Grammarly-like AI writing assistant for WordPress, powered by Google Gemini API.
 
