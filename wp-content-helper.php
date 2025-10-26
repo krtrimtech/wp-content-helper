@@ -2,8 +2,8 @@
 /**
  * Plugin Name: WP Content Helper
  * Plugin URI: https://github.com/krtrimtech/wp-content-helper
- * Description: Grammarly-like AI writing assistant with Google Gemini API. Each user uses their own API key.
- * Version: 1.1.0
+ * Description: Grammarly-like AI writing assistant with Google Gemini API. Works with Gutenberg, Elementor, and Classic Editor.
+ * Version: 1.2.0
  * Author: Krtrim (Shyanukant Rathi)
  * Author URI: https://shyanukant.github.io/
  * License: GPL v2 or later
@@ -96,13 +96,13 @@ Text: {$text}";
     }
     
     public function improve_text($text, $language = 'en') {
-        $prompt = "Improve this text for better clarity, grammar, and flow. Return ONLY the improved text without explanations:\n\n{$text}";
+        $prompt = "Improve this text for better clarity, grammar, and flow. Return ONLY the improved text:\n\n{$text}";
         return $this->make_request($prompt, 0.7);
     }
 }
 
 // ========================================
-// USER SETTINGS - DASHBOARD PAGE
+// USER SETTINGS
 // ========================================
 class AIWA_User_Settings {
     private static $instance = null;
@@ -139,16 +139,12 @@ class AIWA_User_Settings {
         if (empty($preferred_lang)) $preferred_lang = 'en';
         
         if (isset($_GET['settings-updated'])) {
-            ?>
-            <div class="notice notice-success is-dismissible">
-                <p><strong>Settings saved successfully!</strong></p>
-            </div>
-            <?php
+            echo '<div class="notice notice-success is-dismissible"><p><strong>Settings saved!</strong></p></div>';
         }
         ?>
         <div class="wrap">
-            <h1>🤖 AI Writing Assistant Settings</h1>
-            <p>Configure your personal AI writing assistant powered by Google Gemini API.</p>
+            <h1>🤖 AI Writing Assistant</h1>
+            <p>Configure your AI writing assistant - works with Gutenberg, Elementor, and all editors!</p>
             
             <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
                 <input type="hidden" name="action" value="aiwa_save_settings">
@@ -156,48 +152,26 @@ class AIWA_User_Settings {
                 
                 <table class="form-table">
                     <tr>
-                        <th scope="row">
-                            <label for="aiwa_gemini_api_key">Google Gemini API Key</label>
-                        </th>
+                        <th><label for="aiwa_gemini_api_key">Gemini API Key</label></th>
                         <td>
-                            <input type="text" 
-                                   name="aiwa_gemini_api_key" 
-                                   id="aiwa_gemini_api_key" 
-                                   value="<?php echo esc_attr($api_key); ?>" 
-                                   class="regular-text"
-                                   placeholder="AIzaSy...">
+                            <input type="text" name="aiwa_gemini_api_key" id="aiwa_gemini_api_key" 
+                                   value="<?php echo esc_attr($api_key); ?>" class="regular-text">
                             <p class="description">
-                                Get your free API key from: 
-                                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-weight: 600;">Google AI Studio →</a>
+                                Get free API: <a href="https://aistudio.google.com/app/apikey" target="_blank"><strong>Google AI Studio →</strong></a>
                             </p>
                             <?php if (!empty($api_key)): ?>
-                                <p style="color: #16a34a; font-weight: 600; margin-top: 10px;">
-                                    ✓ API Key configured!
-                                </p>
-                            <?php else: ?>
-                                <p style="color: #f59e0b; font-weight: 600; margin-top: 10px;">
-                                    ⚠ Please add your API key to use AI features
-                                </p>
+                                <p style="color: #16a34a; font-weight: 600;">✓ API Key configured!</p>
                             <?php endif; ?>
                         </td>
                     </tr>
-                    
                     <tr>
-                        <th scope="row">
-                            <label for="aiwa_preferred_language">Preferred Language</label>
-                        </th>
+                        <th><label for="aiwa_preferred_language">Language</label></th>
                         <td>
-                            <select name="aiwa_preferred_language" id="aiwa_preferred_language" class="regular-text">
+                            <select name="aiwa_preferred_language" id="aiwa_preferred_language">
                                 <?php
-                                $languages = array(
-                                    'en' => 'English', 'hi' => 'Hindi (हिंदी)', 'bn' => 'Bengali (বাংলা)',
-                                    'pa' => 'Punjabi (ਪੰਜਾਬੀ)', 'te' => 'Telugu (తెలుగు)', 
-                                    'mr' => 'Marathi (मराठी)', 'ta' => 'Tamil (தமிழ்)'
-                                );
-                                
+                                $languages = array('en' => 'English', 'hi' => 'Hindi', 'bn' => 'Bengali');
                                 foreach ($languages as $code => $name) {
-                                    $selected = ($code === $preferred_lang) ? 'selected' : '';
-                                    echo "<option value=\"" . esc_attr($code) . "\" {$selected}>" . esc_html($name) . "</option>";
+                                    echo "<option value=\"{$code}\"" . selected($preferred_lang, $code, false) . ">{$name}</option>";
                                 }
                                 ?>
                             </select>
@@ -205,31 +179,17 @@ class AIWA_User_Settings {
                     </tr>
                 </table>
                 
-                <?php submit_button('Save Settings'); ?>
+                <?php submit_button(); ?>
             </form>
             
-            <hr style="margin: 40px 0;">
-            
+            <hr>
             <h2>📖 How to Use</h2>
-            <div style="background: #f0f6fc; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-                <ol style="margin: 0; padding-left: 20px;">
-                    <li style="margin-bottom: 10px;">
-                        <strong>Add your API key above</strong> and click "Save Settings"
-                    </li>
-                    <li style="margin-bottom: 10px;">
-                        <strong>Go to Posts → Add New</strong> (or edit any existing post)
-                    </li>
-                    <li style="margin-bottom: 10px;">
-                        <strong>Select any text</strong> in the editor
-                    </li>
-                    <li>
-                        <strong>Click AI buttons in the toolbar:</strong>
-                        <ul style="margin-top: 5px;">
-                            <li>🤖 <strong>AI Improve</strong> - Automatically improve selected text</li>
-                            <li>✓ <strong>Check Grammar</strong> - Analyze for errors</li>
-                            <li>✏️ <strong>Rewrite</strong> - Change tone and style</li>
-                        </ul>
-                    </li>
+            <div style="background: #f0f6fc; padding: 20px; border-radius: 8px;">
+                <ol>
+                    <li><strong>Save your API key above</strong></li>
+                    <li><strong>Go to any Post/Page editor</strong> (Gutenberg or Elementor)</li>
+                    <li><strong>Look for the floating 🤖 AI button</strong> at bottom-right</li>
+                    <li><strong>Select text and click AI features!</strong></li>
                 </ol>
             </div>
         </div>
@@ -239,10 +199,6 @@ class AIWA_User_Settings {
     public function save_settings() {
         if (!isset($_POST['aiwa_settings_nonce']) || !wp_verify_nonce($_POST['aiwa_settings_nonce'], 'aiwa_settings')) {
             wp_die('Security check failed');
-        }
-        
-        if (!current_user_can('edit_posts')) {
-            wp_die('You do not have permission');
         }
         
         $user_id = get_current_user_id();
@@ -261,16 +217,13 @@ class AIWA_User_Settings {
     
     public function api_key_notice() {
         $screen = get_current_screen();
-        if (!$screen || !in_array($screen->id, array('post', 'page'))) return;
+        if (!$screen || !in_array($screen->base, array('post', 'page'))) return;
         
         $api_key = get_user_meta(get_current_user_id(), 'aiwa_gemini_api_key', true);
         if (empty($api_key)) {
             ?>
-            <div class="notice notice-warning is-dismissible">
-                <p>
-                    <strong>🤖 WP Content Helper:</strong> Configure your AI Assistant to start using features.
-                    <a href="<?php echo admin_url('admin.php?page=wp-content-helper'); ?>" style="font-weight: 600;">Go to Settings →</a>
-                </p>
+            <div class="notice notice-info">
+                <p>🤖 <strong>AI Assistant:</strong> <a href="<?php echo admin_url('admin.php?page=wp-content-helper'); ?>">Add your API key</a> to use AI features</p>
             </div>
             <?php
         }
@@ -278,9 +231,9 @@ class AIWA_User_Settings {
 }
 
 // ========================================
-// GUTENBERG TOOLBAR INTEGRATION
+// FLOATING AI PANEL (Works with ALL editors)
 // ========================================
-class AIWA_Gutenberg {
+class AIWA_Floating_Panel {
     private static $instance = null;
     
     public static function get_instance() {
@@ -291,70 +244,265 @@ class AIWA_Gutenberg {
     }
     
     private function __construct() {
-        add_action('enqueue_block_editor_assets', array($this, 'enqueue_assets'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_assets'));
     }
     
-    public function enqueue_assets() {
+    public function enqueue_assets($hook) {
+        // Only load on post/page edit screens
+        if (!in_array($hook, array('post.php', 'post-new.php', 'page.php', 'page-new.php'))) {
+            return;
+        }
+        
         $user_id = get_current_user_id();
         $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
         $preferred_language = get_user_meta($user_id, 'aiwa_preferred_language', true);
         if (empty($preferred_language)) $preferred_language = 'en';
         
-        wp_enqueue_script('wp-rich-text');
-        wp_enqueue_script('wp-block-editor');
-        wp_enqueue_script('wp-components');
-        wp_enqueue_script('wp-element');
-        wp_enqueue_script('wp-data');
+        // Enqueue styles and scripts
+        wp_enqueue_style('aiwa-floating-panel', false);
+        wp_add_inline_style('aiwa-floating-panel', "
+            #aiwa-floating-btn {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                width: 60px;
+                height: 60px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 50%;
+                border: none;
+                cursor: pointer;
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+                z-index: 99999;
+                font-size: 28px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s;
+            }
+            #aiwa-floating-btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+            }
+            #aiwa-panel {
+                position: fixed;
+                bottom: 100px;
+                right: 30px;
+                width: 400px;
+                max-height: 600px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                z-index: 99998;
+                display: none;
+                overflow: hidden;
+            }
+            #aiwa-panel.open { display: block; }
+            .aiwa-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 15px 20px;
+                font-weight: 600;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .aiwa-close {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 0;
+                width: 30px;
+                height: 30px;
+            }
+            .aiwa-content {
+                padding: 20px;
+                max-height: 500px;
+                overflow-y: auto;
+            }
+            .aiwa-tab-buttons {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #e5e7eb;
+            }
+            .aiwa-tab-btn {
+                padding: 10px 15px;
+                background: transparent;
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                color: #64748b;
+                border-bottom: 3px solid transparent;
+                transition: all 0.2s;
+            }
+            .aiwa-tab-btn.active {
+                color: #667eea;
+                border-bottom-color: #667eea;
+            }
+            .aiwa-tab-content { display: none; }
+            .aiwa-tab-content.active { display: block; }
+            .aiwa-btn {
+                width: 100%;
+                padding: 12px;
+                background: #667eea;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                margin-top: 10px;
+            }
+            .aiwa-btn:hover { background: #5568d3; }
+            .aiwa-btn:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+            .aiwa-textarea {
+                width: 100%;
+                padding: 10px;
+                border: 2px solid #e5e7eb;
+                border-radius: 6px;
+                font-family: inherit;
+                resize: vertical;
+            }
+            .aiwa-select {
+                width: 100%;
+                padding: 10px;
+                border: 2px solid #e5e7eb;
+                border-radius: 6px;
+                margin-bottom: 10px;
+            }
+            .aiwa-result {
+                margin-top: 15px;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border-left: 4px solid #667eea;
+            }
+            .aiwa-loading {
+                text-align: center;
+                padding: 20px;
+                color: #667eea;
+            }
+        ");
         
-        // Add toolbar buttons
-        wp_add_inline_script('wp-rich-text', "
-(function(wp) {
-    const { registerFormatType } = wp.richText;
-    const { RichTextToolbarButton } = wp.blockEditor;
-    const { createElement: el, Fragment, useState } = wp.element;
-    const { Modal, Button, SelectControl, Spinner } = wp.components;
-    const { useSelect } = wp.data;
-    
+        wp_enqueue_script('aiwa-floating-panel', false, array(), '1.2.0', true);
+        wp_add_inline_script('aiwa-floating-panel', "
+(function() {
     const hasApiKey = " . (empty($api_key) ? 'false' : 'true') . ";
     const settingsUrl = '" . admin_url('admin.php?page=wp-content-helper') . "';
+    const ajaxUrl = '" . admin_url('admin-ajax.php') . "';
+    const nonce = '" . wp_create_nonce('aiwa_nonce') . "';
     
-    // AI Improve Button (Quick Action)
-    const AIImproveButton = (props) => {
-        const [isLoading, setIsLoading] = useState(false);
+    // Create floating button and panel
+    const html = `
+        <button id=\"aiwa-floating-btn\">🤖</button>
+        <div id=\"aiwa-panel\">
+            <div class=\"aiwa-header\">
+                <span>AI Writing Assistant</span>
+                <button class=\"aiwa-close\">×</button>
+            </div>
+            <div class=\"aiwa-content\">
+                <div class=\"aiwa-tab-buttons\">
+                    <button class=\"aiwa-tab-btn active\" data-tab=\"improve\">✨ Improve</button>
+                    <button class=\"aiwa-tab-btn\" data-tab=\"grammar\">✓ Grammar</button>
+                    <button class=\"aiwa-tab-btn\" data-tab=\"rewrite\">✏️ Rewrite</button>
+                </div>
+                
+                <div id=\"aiwa-tab-improve\" class=\"aiwa-tab-content active\">
+                    <p style=\"margin-top:0;color:#64748b;font-size:13px;\">Select text, paste it here, and improve it instantly</p>
+                    <textarea id=\"aiwa-improve-text\" class=\"aiwa-textarea\" rows=\"5\" placeholder=\"Paste your text here or select text on page\"></textarea>
+                    <button id=\"aiwa-improve-btn\" class=\"aiwa-btn\">✨ Improve Text</button>
+                    <div id=\"aiwa-improve-result\"></div>
+                </div>
+                
+                <div id=\"aiwa-tab-grammar\" class=\"aiwa-tab-content\">
+                    <p style=\"margin-top:0;color:#64748b;font-size:13px;\">Check grammar and get suggestions</p>
+                    <textarea id=\"aiwa-grammar-text\" class=\"aiwa-textarea\" rows=\"5\" placeholder=\"Paste text to check\"></textarea>
+                    <button id=\"aiwa-grammar-btn\" class=\"aiwa-btn\">✓ Check Grammar</button>
+                    <div id=\"aiwa-grammar-result\"></div>
+                </div>
+                
+                <div id=\"aiwa-tab-rewrite\" class=\"aiwa-tab-content\">
+                    <p style=\"margin-top:0;color:#64748b;font-size:13px;\">Rewrite in different tone</p>
+                    <select id=\"aiwa-tone\" class=\"aiwa-select\">
+                        <option value=\"professional\">Professional</option>
+                        <option value=\"casual\">Casual</option>
+                        <option value=\"friendly\">Friendly</option>
+                        <option value=\"academic\">Academic</option>
+                        <option value=\"creative\">Creative</option>
+                        <option value=\"simple\">Simple</option>
+                    </select>
+                    <textarea id=\"aiwa-rewrite-text\" class=\"aiwa-textarea\" rows=\"5\" placeholder=\"Text to rewrite\"></textarea>
+                    <button id=\"aiwa-rewrite-btn\" class=\"aiwa-btn\">✏️ Rewrite</button>
+                    <div id=\"aiwa-rewrite-result\"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        document.body.insertAdjacentHTML('beforeend', html);
         
-        const selectedBlock = useSelect((select) => {
-            return select('core/block-editor').getSelectedBlock();
-        }, []);
+        const btn = document.getElementById('aiwa-floating-btn');
+        const panel = document.getElementById('aiwa-panel');
+        const closeBtn = document.querySelector('.aiwa-close');
         
-        if (!selectedBlock || (selectedBlock.name !== 'core/paragraph' && selectedBlock.name !== 'core/heading')) {
-            return null;
-        }
+        // Toggle panel
+        btn.addEventListener('click', () => {
+            panel.classList.toggle('open');
+        });
         
-        const improveText = async () => {
+        closeBtn.addEventListener('click', () => {
+            panel.classList.remove('open');
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.aiwa-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.aiwa-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.aiwa-tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('aiwa-tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Auto-fill with selected text
+        document.addEventListener('selectionchange', () => {
+            const selection = window.getSelection().toString().trim();
+            if (selection && panel.classList.contains('open')) {
+                const activeTab = document.querySelector('.aiwa-tab-btn.active').dataset.tab;
+                document.getElementById('aiwa-' + activeTab + '-text').value = selection;
+            }
+        });
+        
+        // Improve text
+        document.getElementById('aiwa-improve-btn').addEventListener('click', async function() {
             if (!hasApiKey) {
-                alert('Please add your API key in AI Assistant settings first.');
+                alert('Please add API key in settings');
                 window.open(settingsUrl, '_blank');
                 return;
             }
             
-            const selection = window.getSelection();
-            const selectedText = selection.toString().trim();
+            const text = document.getElementById('aiwa-improve-text').value.trim();
+            if (!text) return alert('Please enter text');
             
-            if (!selectedText) {
-                alert('Please select some text first');
-                return;
-            }
-            
-            setIsLoading(true);
+            const btn = this;
+            const resultDiv = document.getElementById('aiwa-improve-result');
+            btn.disabled = true;
+            btn.textContent = 'Improving...';
+            resultDiv.innerHTML = '<div class=\"aiwa-loading\">🔄 Processing...</div>';
             
             try {
-                const response = await fetch(ajaxurl, {
+                const response = await fetch(ajaxUrl, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                     body: new URLSearchParams({
                         action: 'aiwa_improve_text',
-                        nonce: '" . wp_create_nonce('aiwa_nonce') . "',
-                        text: selectedText,
+                        nonce: nonce,
+                        text: text,
                         language: '{$preferred_language}'
                     })
                 });
@@ -362,70 +510,43 @@ class AIWA_Gutenberg {
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Replace selected text with improved version
-                    const improved = data.data;
-                    document.execCommand('insertText', false, improved);
-                    alert('✓ Text improved!');
+                    resultDiv.innerHTML = '<div class=\"aiwa-result\"><strong>Improved:</strong><br>' + data.data + '</div>';
                 } else {
-                    alert('Error: ' + (data.data.message || 'Failed to improve text'));
+                    resultDiv.innerHTML = '<div class=\"aiwa-result\" style=\"border-left-color:#f59e0b;\">Error: ' + (data.data.message || 'Failed') + '</div>';
                 }
             } catch (err) {
-                alert('Network error: ' + err.message);
+                resultDiv.innerHTML = '<div class=\"aiwa-result\" style=\"border-left-color:#ef4444;\">Network error</div>';
             } finally {
-                setIsLoading(false);
+                btn.disabled = false;
+                btn.textContent = '✨ Improve Text';
             }
-        };
-        
-        return el(RichTextToolbarButton, {
-            icon: 'star-filled',
-            title: 'AI Improve (select text first)',
-            onClick: improveText,
-            isDisabled: isLoading,
-            style: isLoading ? { color: '#667eea' } : {}
         });
-    };
-    
-    // Grammar Check Button
-    const GrammarCheckButton = (props) => {
-        const [isOpen, setIsOpen] = useState(false);
-        const [isLoading, setIsLoading] = useState(false);
-        const [result, setResult] = useState(null);
         
-        const selectedBlock = useSelect((select) => {
-            return select('core/block-editor').getSelectedBlock();
-        }, []);
-        
-        if (!selectedBlock || (selectedBlock.name !== 'core/paragraph' && selectedBlock.name !== 'core/heading')) {
-            return null;
-        }
-        
-        const checkGrammar = async () => {
+        // Grammar check
+        document.getElementById('aiwa-grammar-btn').addEventListener('click', async function() {
             if (!hasApiKey) {
-                alert('Please add your API key in AI Assistant settings first.');
+                alert('Please add API key');
                 window.open(settingsUrl, '_blank');
                 return;
             }
             
-            const selection = window.getSelection();
-            const selectedText = selection.toString().trim();
+            const text = document.getElementById('aiwa-grammar-text').value.trim();
+            if (!text) return alert('Please enter text');
             
-            if (!selectedText) {
-                alert('Please select some text first');
-                return;
-            }
-            
-            setIsOpen(true);
-            setIsLoading(true);
-            setResult(null);
+            const btn = this;
+            const resultDiv = document.getElementById('aiwa-grammar-result');
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
+            resultDiv.innerHTML = '<div class=\"aiwa-loading\">🔄 Analyzing...</div>';
             
             try {
-                const response = await fetch(ajaxurl, {
+                const response = await fetch(ajaxUrl, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                     body: new URLSearchParams({
                         action: 'aiwa_check_grammar',
-                        nonce: '" . wp_create_nonce('aiwa_nonce') . "',
-                        text: selectedText,
+                        nonce: nonce,
+                        text: text,
                         language: '{$preferred_language}'
                     })
                 });
@@ -433,112 +554,62 @@ class AIWA_Gutenberg {
                 const data = await response.json();
                 
                 if (data.success) {
-                    setResult(data.data);
+                    const result = data.data;
+                    let html = '<div class=\"aiwa-result\"><strong>Score: ' + result.overall_score + '/100</strong><br>' + result.summary;
+                    
+                    if (result.errors && result.errors.length > 0) {
+                        html += '<hr style=\"margin:10px 0;\">';
+                        result.errors.forEach(err => {
+                            html += '<div style=\"margin:10px 0;padding:10px;background:#fff;border-left:4px solid #f59e0b;border-radius:4px;\">';
+                            html += '<strong style=\"color:#f59e0b;text-transform:uppercase;font-size:11px;\">' + err.type + '</strong><br>';
+                            html += '<div style=\"margin:5px 0;\"><strong>Original:</strong> ' + err.original + '</div>';
+                            html += '<div style=\"color:#16a34a;\"><strong>Fix:</strong> ' + err.suggestion + '</div>';
+                            if (err.explanation) html += '<div style=\"font-size:12px;color:#64748b;margin-top:5px;\">' + err.explanation + '</div>';
+                            html += '</div>';
+                        });
+                    } else {
+                        html += '<div style=\"color:#16a34a;margin-top:10px;\">✓ No errors found!</div>';
+                    }
+                    
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
                 } else {
-                    alert('Error: ' + (data.data.message || 'Failed to check grammar'));
-                    setIsOpen(false);
+                    resultDiv.innerHTML = '<div class=\"aiwa-result\" style=\"border-left-color:#f59e0b;\">Error: ' + (data.data.message || 'Failed') + '</div>';
                 }
             } catch (err) {
-                alert('Network error: ' + err.message);
-                setIsOpen(false);
+                resultDiv.innerHTML = '<div class=\"aiwa-result\" style=\"border-left-color:#ef4444;\">Network error</div>';
             } finally {
-                setIsLoading(false);
+                btn.disabled = false;
+                btn.textContent = '✓ Check Grammar';
             }
-        };
+        });
         
-        return el(Fragment, {},
-            el(RichTextToolbarButton, {
-                icon: 'yes-alt',
-                title: 'Check Grammar (select text first)',
-                onClick: checkGrammar
-            }),
-            isOpen && el(Modal, {
-                title: '✓ Grammar Check Results',
-                onRequestClose: () => setIsOpen(false),
-                style: { maxWidth: '600px' }
-            },
-                isLoading ? el(Spinner) :
-                result && el('div', {},
-                    el('div', { style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '15px', borderRadius: '8px', marginBottom: '15px' } },
-                        el('h3', { style: { margin: '0 0 8px 0' } }, 'Score: ' + result.overall_score + '/100'),
-                        el('p', { style: { margin: 0 } }, result.summary)
-                    ),
-                    result.errors && result.errors.length > 0 ?
-                        result.errors.map((err, idx) => 
-                            el('div', { 
-                                key: idx,
-                                style: { 
-                                    background: '#f8f9fa', 
-                                    padding: '12px', 
-                                    marginBottom: '10px', 
-                                    borderRadius: '6px',
-                                    borderLeft: '4px solid #f59e0b'
-                                }
-                            },
-                                el('strong', { style: { color: '#f59e0b', textTransform: 'uppercase', fontSize: '12px' } }, err.type),
-                                el('div', { style: { marginTop: '5px' } }, 
-                                    el('strong', {}, 'Original: '), err.original
-                                ),
-                                el('div', { style: { marginTop: '5px', color: '#16a34a' } }, 
-                                    el('strong', {}, 'Fix: '), err.suggestion
-                                ),
-                                err.explanation && el('p', { style: { margin: '5px 0 0 0', fontSize: '13px', color: '#64748b', fontStyle: 'italic' } }, err.explanation)
-                            )
-                        ) :
-                        el('p', { style: { color: '#16a34a', fontWeight: '600', textAlign: 'center', padding: '20px' } }, '✓ No errors found!')
-                )
-            )
-        );
-    };
-    
-    // Rewrite Button
-    const RewriteButton = (props) => {
-        const [isOpen, setIsOpen] = useState(false);
-        const [isLoading, setIsLoading] = useState(false);
-        const [tone, setTone] = useState('professional');
-        const [result, setResult] = useState(null);
-        const [originalText, setOriginalText] = useState('');
-        
-        const selectedBlock = useSelect((select) => {
-            return select('core/block-editor').getSelectedBlock();
-        }, []);
-        
-        if (!selectedBlock || (selectedBlock.name !== 'core/paragraph' && selectedBlock.name !== 'core/heading')) {
-            return null;
-        }
-        
-        const openModal = () => {
+        // Rewrite
+        document.getElementById('aiwa-rewrite-btn').addEventListener('click', async function() {
             if (!hasApiKey) {
-                alert('Please add your API key in AI Assistant settings first.');
+                alert('Please add API key');
                 window.open(settingsUrl, '_blank');
                 return;
             }
             
-            const selection = window.getSelection();
-            const selectedText = selection.toString().trim();
+            const text = document.getElementById('aiwa-rewrite-text').value.trim();
+            const tone = document.getElementById('aiwa-tone').value;
+            if (!text) return alert('Please enter text');
             
-            if (!selectedText) {
-                alert('Please select some text first');
-                return;
-            }
-            
-            setOriginalText(selectedText);
-            setIsOpen(true);
-            setResult(null);
-        };
-        
-        const rewriteText = async () => {
-            setIsLoading(true);
-            setResult(null);
+            const btn = this;
+            const resultDiv = document.getElementById('aiwa-rewrite-result');
+            btn.disabled = true;
+            btn.textContent = 'Rewriting...';
+            resultDiv.innerHTML = '<div class=\"aiwa-loading\">🔄 Rewriting...</div>';
             
             try {
-                const response = await fetch(ajaxurl, {
+                const response = await fetch(ajaxUrl, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                     body: new URLSearchParams({
                         action: 'aiwa_rewrite_content',
-                        nonce: '" . wp_create_nonce('aiwa_nonce') . "',
-                        text: originalText,
+                        nonce: nonce,
+                        text: text,
                         tone: tone,
                         language: '{$preferred_language}'
                     })
@@ -547,86 +618,19 @@ class AIWA_Gutenberg {
                 const data = await response.json();
                 
                 if (data.success) {
-                    setResult(data.data);
+                    resultDiv.innerHTML = '<div class=\"aiwa-result\"><strong>Rewritten:</strong><br>' + data.data + '</div>';
                 } else {
-                    alert('Error: ' + (data.data.message || 'Failed to rewrite'));
+                    resultDiv.innerHTML = '<div class=\"aiwa-result\" style=\"border-left-color:#f59e0b;\">Error: ' + (data.data.message || 'Failed') + '</div>';
                 }
             } catch (err) {
-                alert('Network error: ' + err.message);
+                resultDiv.innerHTML = '<div class=\"aiwa-result\" style=\"border-left-color:#ef4444;\">Network error</div>';
             } finally {
-                setIsLoading(false);
+                btn.disabled = false;
+                btn.textContent = '✏️ Rewrite';
             }
-        };
-        
-        const replaceText = () => {
-            if (result) {
-                document.execCommand('insertText', false, result);
-                setIsOpen(false);
-                alert('✓ Text replaced!');
-            }
-        };
-        
-        return el(Fragment, {},
-            el(RichTextToolbarButton, {
-                icon: 'edit',
-                title: 'Rewrite (select text first)',
-                onClick: openModal
-            }),
-            isOpen && el(Modal, {
-                title: '✏️ Rewrite Text',
-                onRequestClose: () => setIsOpen(false),
-                style: { maxWidth: '600px' }
-            },
-                el(SelectControl, {
-                    label: 'Tone',
-                    value: tone,
-                    options: [
-                        { label: 'Professional', value: 'professional' },
-                        { label: 'Casual', value: 'casual' },
-                        { label: 'Friendly', value: 'friendly' },
-                        { label: 'Academic', value: 'academic' },
-                        { label: 'Creative', value: 'creative' },
-                        { label: 'Simple', value: 'simple' }
-                    ],
-                    onChange: setTone
-                }),
-                el(Button, {
-                    isPrimary: true,
-                    onClick: rewriteText,
-                    disabled: isLoading
-                }, isLoading ? 'Rewriting...' : 'Rewrite'),
-                result && el('div', { style: { marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' } },
-                    el('h4', { style: { marginTop: 0 } }, 'Rewritten:'),
-                    el('div', { style: { background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '10px', lineHeight: '1.6' } }, result),
-                    el(Button, { isPrimary: true, onClick: replaceText }, 'Replace Selected Text')
-                )
-            )
-        );
-    };
-    
-    // Register format types
-    registerFormatType('aiwa/ai-improve', {
-        title: 'AI Improve',
-        tagName: 'span',
-        className: null,
-        edit: AIImproveButton
+        });
     });
-    
-    registerFormatType('aiwa/grammar-check', {
-        title: 'Grammar Check',
-        tagName: 'span',
-        className: null,
-        edit: GrammarCheckButton
-    });
-    
-    registerFormatType('aiwa/rewrite', {
-        title: 'Rewrite',
-        tagName: 'span',
-        className: null,
-        edit: RewriteButton
-    });
-    
-})(window.wp);
+})();
         ");
     }
 }
@@ -646,11 +650,10 @@ class AI_Writing_Assistant {
     
     private function __construct() {
         AIWA_User_Settings::get_instance();
-        AIWA_Gutenberg::get_instance();
+        AIWA_Floating_Panel::get_instance();
         
         add_action('wp_ajax_aiwa_check_grammar', array($this, 'ajax_check_grammar'));
         add_action('wp_ajax_aiwa_rewrite_content', array($this, 'ajax_rewrite_content'));
-        add_action('wp_ajax_aiwa_generate_content', array($this, 'ajax_generate_content'));
         add_action('wp_ajax_aiwa_improve_text', array($this, 'ajax_improve_text'));
     }
     
@@ -661,7 +664,7 @@ class AI_Writing_Assistant {
         $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
         
         if (empty($api_key)) {
-            wp_send_json_error(array('message' => 'Please add your API key in settings.'));
+            wp_send_json_error(array('message' => 'Please add API key'));
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
@@ -688,7 +691,7 @@ class AI_Writing_Assistant {
         $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
         
         if (empty($api_key)) {
-            wp_send_json_error(array('message' => 'Please add your API key.'));
+            wp_send_json_error(array('message' => 'Please add API key'));
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
@@ -705,30 +708,6 @@ class AI_Writing_Assistant {
         wp_send_json_success($result);
     }
     
-    public function ajax_generate_content() {
-        check_ajax_referer('aiwa_nonce', 'nonce');
-        
-        $user_id = get_current_user_id();
-        $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
-        
-        if (empty($api_key)) {
-            wp_send_json_error(array('message' => 'Please add your API key.'));
-        }
-        
-        $prompt = isset($_POST['prompt']) ? sanitize_textarea_field($_POST['prompt']) : '';
-        $context = isset($_POST['context']) ? sanitize_textarea_field($_POST['context']) : '';
-        $language = isset($_POST['language']) ? sanitize_text_field($_POST['language']) : 'en';
-        
-        $gemini = new AIWA_Gemini_API($api_key);
-        $result = $gemini->generate_content($prompt, $context, $language);
-        
-        if (is_wp_error($result)) {
-            wp_send_json_error(array('message' => $result->get_error_message()));
-        }
-        
-        wp_send_json_success($result);
-    }
-    
     public function ajax_improve_text() {
         check_ajax_referer('aiwa_nonce', 'nonce');
         
@@ -736,7 +715,7 @@ class AI_Writing_Assistant {
         $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
         
         if (empty($api_key)) {
-            wp_send_json_error(array('message' => 'Please add your API key.'));
+            wp_send_json_error(array('message' => 'Please add API key'));
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
