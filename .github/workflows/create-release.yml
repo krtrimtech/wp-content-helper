@@ -1,0 +1,51 @@
+name: Create Release ZIP and GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    name: Build and Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Create release ZIP
+        run: |
+          # Create temporary directory
+          mkdir -p build
+          
+          # Copy plugin files (exclude development files)
+          rsync -av --progress . build/wp-content-helper \
+            --exclude .git \
+            --exclude .github \
+            --exclude node_modules \
+            --exclude vendor \
+            --exclude .DS_Store \
+            --exclude .idea \
+            --exclude .vscode \
+            --exclude "*.log" \
+            --exclude build
+          
+          # Create ZIP
+          cd build
+          zip -r ../wp-content-helper-${{ steps.get_version.outputs.VERSION }}.zip wp-content-helper/
+          cd ..
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: wp-content-helper-${{ steps.get_version.outputs.VERSION }}.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
