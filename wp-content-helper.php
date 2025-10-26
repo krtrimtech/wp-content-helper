@@ -2,8 +2,8 @@
 /**
  * Plugin Name: WP Content Helper
  * Plugin URI: https://github.com/krtrimtech/wp-content-helper
- * Description: Grammarly-like AI writing assistant with Google Gemini API. Shows green icon in editor.
- * Version: 1.3.1
+ * Description: Grammarly-like AI writing assistant with Google Gemini API. Auto-detects language and applies changes to editor.
+ * Version: 1.4.0
  * Author: Krtrim (Shyanukant Rathi)
  * Author URI: https://shyanukant.github.io/
  * License: GPL v2 or later
@@ -64,13 +64,18 @@ class AIWA_Gemini_API {
         return $result['candidates'][0]['content']['parts'][0]['text'];
     }
     
-    public function improve_text($text, $language = 'en') {
-        $prompt = "Improve this text for better clarity, grammar, and flow. Return ONLY the improved text:\n\n{$text}";
+    public function improve_text($text) {
+        // Auto-detect language and improve in the same language
+        $prompt = "Improve this text for better clarity, grammar, and flow. Detect the language of the text and respond in THE SAME LANGUAGE. Return ONLY the improved text:\n\n{$text}";
         return $this->make_request($prompt, 0.7);
     }
     
-    public function check_grammar($text, $language = 'en') {
-        $prompt = "Check grammar and provide suggestions in JSON: {\"errors\": [{\"type\": \"grammar\", \"original\": \"text\", \"suggestion\": \"fix\", \"explanation\": \"why\"}], \"score\": 85}\n\nText: {$text}";
+    public function check_grammar($text) {
+        // Auto-detect language and check grammar
+        $prompt = "Detect the language of this text and check grammar in that language. Provide suggestions in JSON format in the DETECTED LANGUAGE:
+{\"language\": \"detected language name\", \"errors\": [{\"type\": \"grammar\", \"original\": \"text\", \"suggestion\": \"fix\", \"explanation\": \"why\"}], \"score\": 85}
+
+Text: {$text}";
         
         $result = $this->make_request($prompt, 0.3);
         if (is_wp_error($result)) return $result;
@@ -81,11 +86,12 @@ class AIWA_Gemini_API {
             if ($parsed) return $parsed;
         }
         
-        return array('errors' => array(), 'score' => 90);
+        return array('language' => 'Unknown', 'errors' => array(), 'score' => 90);
     }
     
-    public function rewrite_content($text, $tone = 'professional', $language = 'en') {
-        $prompt = "Rewrite this text in a {$tone} tone:\n\n{$text}";
+    public function rewrite_content($text, $tone = 'professional') {
+        // Auto-detect language and rewrite in the same language
+        $prompt = "Detect the language of this text and rewrite it in a {$tone} tone IN THE SAME LANGUAGE:\n\n{$text}";
         return $this->make_request($prompt, 0.7);
     }
 }
@@ -122,6 +128,7 @@ class AIWA_Settings {
         ?>
         <div class="wrap">
             <h1>🤖 AI Writing Assistant</h1>
+            <p>Auto-detects language and responds in the same language (Hindi, English, etc.)</p>
             <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
                 <input type="hidden" name="action" value="aiwa_save">
                 <?php wp_nonce_field('aiwa'); ?>
@@ -140,8 +147,12 @@ class AIWA_Settings {
                 <?php submit_button(); ?>
             </form>
             <hr>
-            <h2>How to Use</h2>
-            <p>1. Add API key above<br>2. Go to any post/page<br>3. <strong>Look for GREEN 🟢 button at bottom-right</strong><br>4. Click it to use AI!</p>
+            <h2>Features</h2>
+            <ul>
+                <li>✅ Auto-detects language (Hindi, English, etc.)</li>
+                <li>✅ Responds in the same language</li>
+                <li>✅ Apply button to insert text into editor</li>
+            </ul>
         </div>
         <?php
     }
@@ -158,7 +169,7 @@ class AIWA_Settings {
 }
 
 // ========================================
-// FLOATING GREEN BUTTON (Like Grammarly!)
+// FLOATING GREEN BUTTON
 // ========================================
 class AIWA_Editor_Button {
     private static $instance = null;
@@ -307,6 +318,11 @@ class AIWA_Editor_Button {
             }
             .aiwa-btn:hover { background: #15803d !important; }
             .aiwa-btn:disabled { background: #ccc !important; cursor: not-allowed !important; }
+            .aiwa-btn-apply {
+                background: #667eea !important;
+                margin-top: 10px !important;
+            }
+            .aiwa-btn-apply:hover { background: #5568d3 !important; }
             .aiwa-result {
                 margin-top: 15px !important;
                 padding: 15px !important;
@@ -320,6 +336,16 @@ class AIWA_Editor_Button {
                 border: 2px solid #e5e7eb !important;
                 border-radius: 8px !important;
                 margin-bottom: 10px !important;
+            }
+            .aiwa-lang-badge {
+                display: inline-block;
+                padding: 4px 8px;
+                background: #667eea;
+                color: white;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 600;
+                margin-left: 8px;
             }
         </style>
 
@@ -339,21 +365,21 @@ class AIWA_Editor_Button {
                 </div>
                 
                 <div id="tab-improve" class="aiwa-content active">
-                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Paste text to improve it instantly</p>
-                    <textarea id="text-improve" class="aiwa-textarea" rows="5" placeholder="Paste your text here..."></textarea>
+                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Paste text (any language - Hindi, English, etc.)</p>
+                    <textarea id="text-improve" class="aiwa-textarea" rows="5" placeholder="अपना टेक्स्ट यहाँ पेस्ट करें... / Paste your text here..."></textarea>
                     <button id="btn-improve" class="aiwa-btn">✨ Improve Text</button>
                     <div id="result-improve"></div>
                 </div>
                 
                 <div id="tab-grammar" class="aiwa-content">
-                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Check grammar and spelling</p>
-                    <textarea id="text-grammar" class="aiwa-textarea" rows="5" placeholder="Paste text to check..."></textarea>
+                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Auto-detects language and checks grammar</p>
+                    <textarea id="text-grammar" class="aiwa-textarea" rows="5" placeholder="किसी भी भाषा में टेक्स्ट पेस्ट करें... / Any language..."></textarea>
                     <button id="btn-grammar" class="aiwa-btn">✓ Check Grammar</button>
                     <div id="result-grammar"></div>
                 </div>
                 
                 <div id="tab-rewrite" class="aiwa-content">
-                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Rewrite in different tone</p>
+                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Rewrite in different tone (same language)</p>
                     <select id="tone" class="aiwa-select">
                         <option value="professional">Professional</option>
                         <option value="casual">Casual</option>
@@ -376,7 +402,10 @@ class AIWA_Editor_Button {
             const ajaxUrl = '<?php echo admin_url('admin-ajax.php'); ?>';
             const nonce = '<?php echo wp_create_nonce('aiwa'); ?>';
             
-            console.log('🤖 AI Assistant loaded', {hasKey, ajaxUrl, nonce});
+            let currentImprovedText = '';
+            let currentRewrittenText = '';
+            
+            console.log('🤖 AI Assistant loaded with auto-language detection');
             
             // Toggle modal
             $('#aiwa-green-btn, #aiwa-overlay').click(function() {
@@ -405,6 +434,41 @@ class AIWA_Editor_Button {
                 }
             });
             
+            // Function to insert text into editor
+            function insertIntoEditor(text) {
+                // Try to insert into active editor
+                if (typeof tinymce !== 'undefined' && tinymce.activeEditor) {
+                    // Classic editor
+                    tinymce.activeEditor.insertContent(text);
+                    alert('✓ Text inserted into editor!');
+                } else if (wp && wp.data) {
+                    // Gutenberg editor
+                    const editor = wp.data.select('core/block-editor');
+                    const selectedBlock = editor.getSelectedBlock();
+                    
+                    if (selectedBlock) {
+                        // Insert into current block
+                        wp.data.dispatch('core/block-editor').updateBlockAttributes(
+                            selectedBlock.clientId,
+                            { content: text }
+                        );
+                        alert('✓ Text replaced in selected block!');
+                    } else {
+                        // Create new paragraph block
+                        const newBlock = wp.blocks.createBlock('core/paragraph', { content: text });
+                        wp.data.dispatch('core/block-editor').insertBlocks(newBlock);
+                        alert('✓ Text added as new paragraph!');
+                    }
+                } else {
+                    // Fallback: copy to clipboard
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('✓ Copied to clipboard! Paste it manually (Ctrl+V)');
+                    });
+                }
+                
+                $('#aiwa-modal, #aiwa-overlay').removeClass('show');
+            }
+            
             // Improve
             $('#btn-improve').click(function() {
                 if (!hasKey) {
@@ -420,8 +484,6 @@ class AIWA_Editor_Button {
                 btn.prop('disabled', true).text('Improving...');
                 $('#result-improve').html('<div style="text-align:center;color:#16a34a;">🔄 Processing...</div>');
                 
-                console.log('Sending improve request:', {text, nonce});
-                
                 $.ajax({
                     url: ajaxUrl,
                     type: 'POST',
@@ -431,16 +493,25 @@ class AIWA_Editor_Button {
                         text: text
                     },
                     success: function(res) {
-                        console.log('✓ Improve response:', res);
                         if (res.success) {
-                            $('#result-improve').html('<div class="aiwa-result"><strong>Improved:</strong><br>' + res.data + '</div>');
+                            currentImprovedText = res.data;
+                            $('#result-improve').html(
+                                '<div class="aiwa-result">' +
+                                '<strong>Improved:</strong><br>' + res.data + 
+                                '</div>' +
+                                '<button class="aiwa-btn aiwa-btn-apply" onclick="jQuery(this).parent().find(\'.apply-improve\').click()">📝 Apply to Editor</button>' +
+                                '<button class="apply-improve" style="display:none;"></button>'
+                            );
+                            
+                            $('.apply-improve').click(function() {
+                                insertIntoEditor(currentImprovedText);
+                            });
                         } else {
                             $('#result-improve').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.error('❌ AJAX Error:', {xhr, status, error, response: xhr.responseText});
-                        $('#result-improve').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error: ' + error + '</div>');
+                    error: function() {
+                        $('#result-improve').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error</div>');
                     },
                     complete: function() {
                         btn.prop('disabled', false).text('✨ Improve Text');
@@ -463,8 +534,6 @@ class AIWA_Editor_Button {
                 btn.prop('disabled', true).text('Checking...');
                 $('#result-grammar').html('<div style="text-align:center;color:#16a34a;">🔄 Analyzing...</div>');
                 
-                console.log('Sending grammar request:', {text, nonce});
-                
                 $.ajax({
                     url: ajaxUrl,
                     type: 'POST',
@@ -474,9 +543,12 @@ class AIWA_Editor_Button {
                         text: text
                     },
                     success: function(res) {
-                        console.log('✓ Grammar response:', res);
                         if (res.success) {
-                            let html = '<div class="aiwa-result"><strong>Score: ' + (res.data.score || 90) + '/100</strong>';
+                            const lang = res.data.language || 'Unknown';
+                            let html = '<div class="aiwa-result">';
+                            html += '<strong>Language: <span class="aiwa-lang-badge">' + lang + '</span></strong><br>';
+                            html += '<strong>Score: ' + (res.data.score || 90) + '/100</strong>';
+                            
                             if (res.data.errors && res.data.errors.length > 0) {
                                 html += '<hr style="margin:10px 0;">';
                                 res.data.errors.forEach(function(err) {
@@ -484,6 +556,9 @@ class AIWA_Editor_Button {
                                     html += '<strong style="color:#f59e0b;">' + err.type + '</strong><br>';
                                     html += '<div style="margin:5px 0;"><strong>Original:</strong> ' + err.original + '</div>';
                                     html += '<div style="color:#16a34a;"><strong>Fix:</strong> ' + err.suggestion + '</div>';
+                                    if (err.explanation) {
+                                        html += '<div style="font-size:12px;color:#64748b;margin-top:5px;">' + err.explanation + '</div>';
+                                    }
                                     html += '</div>';
                                 });
                             } else {
@@ -495,9 +570,8 @@ class AIWA_Editor_Button {
                             $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.error('❌ AJAX Error:', {xhr, status, error, response: xhr.responseText});
-                        $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error: ' + error + '</div>');
+                    error: function() {
+                        $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error</div>');
                     },
                     complete: function() {
                         btn.prop('disabled', false).text('✓ Check Grammar');
@@ -521,8 +595,6 @@ class AIWA_Editor_Button {
                 btn.prop('disabled', true).text('Rewriting...');
                 $('#result-rewrite').html('<div style="text-align:center;color:#16a34a;">🔄 Rewriting...</div>');
                 
-                console.log('Sending rewrite request:', {text, tone, nonce});
-                
                 $.ajax({
                     url: ajaxUrl,
                     type: 'POST',
@@ -533,16 +605,25 @@ class AIWA_Editor_Button {
                         tone: tone
                     },
                     success: function(res) {
-                        console.log('✓ Rewrite response:', res);
                         if (res.success) {
-                            $('#result-rewrite').html('<div class="aiwa-result"><strong>Rewritten:</strong><br>' + res.data + '</div>');
+                            currentRewrittenText = res.data;
+                            $('#result-rewrite').html(
+                                '<div class="aiwa-result">' +
+                                '<strong>Rewritten (' + tone + '):</strong><br>' + res.data + 
+                                '</div>' +
+                                '<button class="aiwa-btn aiwa-btn-apply" onclick="jQuery(this).parent().find(\'.apply-rewrite\').click()">📝 Apply to Editor</button>' +
+                                '<button class="apply-rewrite" style="display:none;"></button>'
+                            );
+                            
+                            $('.apply-rewrite').click(function() {
+                                insertIntoEditor(currentRewrittenText);
+                            });
                         } else {
                             $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.error('❌ AJAX Error:', {xhr, status, error, response: xhr.responseText});
-                        $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error: ' + error + '</div>');
+                    error: function() {
+                        $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#ef4444;">Network error</div>');
                     },
                     complete: function() {
                         btn.prop('disabled', false).text('✏️ Rewrite');
@@ -581,7 +662,7 @@ class AIWA_Ajax {
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key configured. Please add it in settings.');
+            wp_send_json_error('No API key configured');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
@@ -606,7 +687,7 @@ class AIWA_Ajax {
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key configured. Please add it in settings.');
+            wp_send_json_error('No API key configured');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
@@ -631,7 +712,7 @@ class AIWA_Ajax {
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key configured. Please add it in settings.');
+            wp_send_json_error('No API key configured');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
