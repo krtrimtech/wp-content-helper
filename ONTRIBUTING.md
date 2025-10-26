@@ -213,7 +213,7 @@ chore: Update dependencies
 
 - **GitHub Issues:** [Report here](https://github.com/krtrimtech/wp-content-helper/issues)
 - **Discussions:** [Ask here](https://github.com/krtrimtech/wp-content-helper/discussions)
-- **Email:** contact@krtrim.com
+- **Email:** contact@krtrim.tech
 
 ## License
 

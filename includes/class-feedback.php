@@ -129,7 +129,7 @@ class AIWA_Feedback {
                 <div style="background:#fff;padding:20px;border:1px solid #e5e7eb;border-radius:8px;margin:20px 0;">
                     <h3 style="margin-top:0;">Other Ways to Reach Us</h3>
                     <ul style="line-height:2;">
-                        <li>📧 <strong>Email:</strong> <a href="mailto:rathishyanukant@gmail.com">contact@krtrim.com</a></li>
+                        <li>📧 <strong>Email:</strong> <a href="mailto:contact@krtrim.tech">contact@krtrim.tech</a></li>
                         <li>🐛 <strong>GitHub Issues:</strong> <a href="https://github.com/krtrimtech/wp-content-helper/issues" target="_blank">Report bugs</a></li>
                         <li>💬 <strong>Discussions:</strong> <a href="https://github.com/krtrimtech/wp-content-helper/discussions" target="_blank">Ask questions</a></li>
                         <li>🌐 <strong>Website:</strong> <a href="https://shyanukant.github.io/" target="_blank">Visit our site</a></li>
@@ -181,7 +181,7 @@ class AIWA_Feedback {
         $rating_label = $rating ? str_repeat('⭐', intval($rating)) : 'Not rated';
         
         // Compose email
-        $to = 'contact@krtrim.com'; // Your email
+        $to = 'contact@krtrim.tech'; // Your email
         $subject = "[WP Content Helper] {$type_label} from {$name}";
         
         $body = "New feedback received from WP Content Helper plugin:\n\n";
@@ -236,7 +236,7 @@ class AIWA_Feedback {
             $user_body .= "https://github.com/krtrimtech\n";
             
             $user_headers = array(
-                'From: WP Content Helper <contact@krtrim.com>',
+                'From: WP Content Helper <contact@krtrim.tech>',
                 'Content-Type: text/plain; charset=UTF-8'
             );
             

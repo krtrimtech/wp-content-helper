@@ -31,7 +31,7 @@ This Code of Conduct applies within project spaces and in public spaces when an 
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at contact@krtrim.com. All complaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at contact@krtrim.tech. All complaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate.
 
 ## Attribution
 

@@ -83,7 +83,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 - 🐛 [Report Issues](https://github.com/krtrimtech/wp-content-helper/issues)
 - 💬 [Discussions](https://github.com/krtrimtech/wp-content-helper/discussions)
-- 📧 Email: contact@krtrim.com
+- 📧 Email: contact@krtrim.tech
 - 💬 Feedback: Use the built-in feedback form in the plugin
 
 ## 📄 License
