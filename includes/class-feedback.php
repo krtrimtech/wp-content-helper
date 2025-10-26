@@ -132,7 +132,7 @@ class AIWA_Feedback {
                         <li>📧 <strong>Email:</strong> <a href="mailto:contact@krtrim.tech">contact@krtrim.tech</a></li>
                         <li>🐛 <strong>GitHub Issues:</strong> <a href="https://github.com/krtrimtech/wp-content-helper/issues" target="_blank">Report bugs</a></li>
                         <li>💬 <strong>Discussions:</strong> <a href="https://github.com/krtrimtech/wp-content-helper/discussions" target="_blank">Ask questions</a></li>
-                        <li>🌐 <strong>Website:</strong> <a href="https://shyanukant.github.io/" target="_blank">Visit our site</a></li>
+                        <li>🌐 <strong>Website:</strong> <a href="https://www.krtrim.tech/tool/" target="_blank">Visit our site</a></li>
                     </ul>
                 </div>
             </div>

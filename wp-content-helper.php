@@ -3,7 +3,7 @@
  * Plugin Name: WP Content Helper
  * Plugin URI: https://github.com/krtrimtech/wp-content-helper
  * Description: Grammarly-like content writing assistant. Auto-detects language and replaces text directly in editor.
- * Version: 1.5.0
+ * Version: 1.1.1
  * Author: Krtrim (Shyanukant Rathi)
  * Author URI: https://shyanukant.github.io/
  * License: GPL v2 or later
@@ -13,7 +13,7 @@
 if (!defined('ABSPATH')) exit;
 
 // Define plugin constants
-define('AIWA_VERSION', '1.5.0');
+define('AIWA_VERSION', '1.1.1');
 define('AIWA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('AIWA_PLUGIN_URL', plugin_dir_url(__FILE__));
 
