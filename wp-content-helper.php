@@ -3,7 +3,7 @@
  * Plugin Name: WP Content Helper
  * Plugin URI: https://github.com/krtrimtech/wp-content-helper
  * Description: Grammarly-like AI writing assistant with Google Gemini API. Each user uses their own API key.
- * Version: 1.0.2
+ * Version: 1.1.0
  * Author: Krtrim (Shyanukant Rathi)
  * Author URI: https://shyanukant.github.io/
  * License: GPL v2 or later
@@ -94,10 +94,15 @@ Text: {$text}";
         }
         return $this->make_request($full_prompt, 0.8);
     }
+    
+    public function improve_text($text, $language = 'en') {
+        $prompt = "Improve this text for better clarity, grammar, and flow. Return ONLY the improved text without explanations:\n\n{$text}";
+        return $this->make_request($prompt, 0.7);
+    }
 }
 
 // ========================================
-// USER SETTINGS - NOW IN DASHBOARD
+// USER SETTINGS - DASHBOARD PAGE
 // ========================================
 class AIWA_User_Settings {
     private static $instance = null;
@@ -110,41 +115,29 @@ class AIWA_User_Settings {
     }
     
     private function __construct() {
-        // Add admin menu
         add_action('admin_menu', array($this, 'add_admin_menu'));
-        
-        // Save settings
         add_action('admin_post_aiwa_save_settings', array($this, 'save_settings'));
-        
-        // Admin notice
         add_action('admin_notices', array($this, 'api_key_notice'));
     }
     
-    /**
-     * Add admin menu page
-     */
     public function add_admin_menu() {
         add_menu_page(
-            'AI Writing Assistant',           // Page title
-            'AI Assistant',                   // Menu title
-            'edit_posts',                     // Capability
-            'wp-content-helper',              // Menu slug
-            array($this, 'render_settings_page'), // Callback
-            'dashicons-edit',                 // Icon
-            30                                // Position
+            'AI Writing Assistant',
+            'AI Assistant',
+            'edit_posts',
+            'wp-content-helper',
+            array($this, 'render_settings_page'),
+            'dashicons-edit',
+            30
         );
     }
     
-    /**
-     * Render settings page
-     */
     public function render_settings_page() {
         $user_id = get_current_user_id();
         $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
         $preferred_lang = get_user_meta($user_id, 'aiwa_preferred_language', true);
         if (empty($preferred_lang)) $preferred_lang = 'en';
         
-        // Show success message if saved
         if (isset($_GET['settings-updated'])) {
             ?>
             <div class="notice notice-success is-dismissible">
@@ -174,16 +167,16 @@ class AIWA_User_Settings {
                                    class="regular-text"
                                    placeholder="AIzaSy...">
                             <p class="description">
-                                Don't have an API key? Get your free API key from: 
+                                Get your free API key from: 
                                 <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-weight: 600;">Google AI Studio →</a>
                             </p>
                             <?php if (!empty($api_key)): ?>
                                 <p style="color: #16a34a; font-weight: 600; margin-top: 10px;">
-                                    ✓ API Key is configured and ready to use!
+                                    ✓ API Key configured!
                                 </p>
                             <?php else: ?>
                                 <p style="color: #f59e0b; font-weight: 600; margin-top: 10px;">
-                                    ⚠ Please add your API key to start using AI features
+                                    ⚠ Please add your API key to use AI features
                                 </p>
                             <?php endif; ?>
                         </td>
@@ -197,26 +190,9 @@ class AIWA_User_Settings {
                             <select name="aiwa_preferred_language" id="aiwa_preferred_language" class="regular-text">
                                 <?php
                                 $languages = array(
-                                    'en' => 'English', 
-                                    'hi' => 'Hindi (हिंदी)', 
-                                    'bn' => 'Bengali (বাংলা)',
-                                    'pa' => 'Punjabi (ਪੰਜਾਬੀ)', 
-                                    'te' => 'Telugu (తెలుగు)', 
-                                    'mr' => 'Marathi (मराठी)', 
-                                    'ta' => 'Tamil (தமிழ்)',
-                                    'ur' => 'Urdu (اردو)', 
-                                    'gu' => 'Gujarati (ગુજરાતી)',
-                                    'kn' => 'Kannada (ಕನ್ನಡ)', 
-                                    'ml' => 'Malayalam (മലയാളം)',
-                                    'es' => 'Spanish (Español)', 
-                                    'fr' => 'French (Français)', 
-                                    'de' => 'German (Deutsch)',
-                                    'ar' => 'Arabic (العربية)', 
-                                    'ja' => 'Japanese (日本語)',
-                                    'ko' => 'Korean (한국어)', 
-                                    'zh' => 'Chinese (中文)',
-                                    'ru' => 'Russian (Русский)', 
-                                    'pt' => 'Portuguese (Português)'
+                                    'en' => 'English', 'hi' => 'Hindi (हिंदी)', 'bn' => 'Bengali (বাংলা)',
+                                    'pa' => 'Punjabi (ਪੰਜਾਬੀ)', 'te' => 'Telugu (తెలుగు)', 
+                                    'mr' => 'Marathi (मराठी)', 'ta' => 'Tamil (தமிழ்)'
                                 );
                                 
                                 foreach ($languages as $code => $name) {
@@ -225,7 +201,6 @@ class AIWA_User_Settings {
                                 }
                                 ?>
                             </select>
-                            <p class="description">Select your preferred language for AI-generated content</p>
                         </td>
                     </tr>
                 </table>
@@ -245,88 +220,55 @@ class AIWA_User_Settings {
                         <strong>Go to Posts → Add New</strong> (or edit any existing post)
                     </li>
                     <li style="margin-bottom: 10px;">
-                        <strong>Click the three dots (⋮)</strong> at the top right of the editor
-                    </li>
-                    <li style="margin-bottom: 10px;">
-                        <strong>Select "AI Writing Assistant"</strong> from the menu
+                        <strong>Select any text</strong> in the editor
                     </li>
                     <li>
-                        <strong>Start using AI features:</strong>
+                        <strong>Click AI buttons in the toolbar:</strong>
                         <ul style="margin-top: 5px;">
-                            <li>✓ Grammar Check - Analyze your content for errors</li>
-                            <li>✏️ Rewrite - Change tone and style</li>
-                            <li>✨ Generate - Create new content from prompts</li>
+                            <li>🤖 <strong>AI Improve</strong> - Automatically improve selected text</li>
+                            <li>✓ <strong>Check Grammar</strong> - Analyze for errors</li>
+                            <li>✏️ <strong>Rewrite</strong> - Change tone and style</li>
                         </ul>
                     </li>
                 </ol>
             </div>
-            
-            <hr style="margin: 40px 0;">
-            
-            <h2>ℹ️ About</h2>
-            <p style="color: #666;">
-                <strong>WP Content Helper</strong> is a powerful AI writing assistant plugin for WordPress.<br>
-                Created by <a href="https://github.com/krtrimtech" target="_blank">Krtrim</a> | 
-                Contributor: <a href="https://shyanukant.github.io/" target="_blank">Shyanukant Rathi</a><br>
-                <a href="https://github.com/krtrimtech/wp-content-helper" target="_blank">GitHub Repository →</a>
-            </p>
         </div>
-        
-        <style>
-            .wrap h1 { font-size: 28px; margin-bottom: 10px; }
-            .wrap > p { font-size: 16px; color: #666; margin-bottom: 30px; }
-            .form-table th { width: 200px; font-weight: 600; }
-            .form-table input[type="text"], .form-table select { padding: 8px; }
-        </style>
         <?php
     }
     
-    /**
-     * Save settings
-     */
     public function save_settings() {
-        // Check nonce
         if (!isset($_POST['aiwa_settings_nonce']) || !wp_verify_nonce($_POST['aiwa_settings_nonce'], 'aiwa_settings')) {
             wp_die('Security check failed');
         }
         
-        // Check user capability
         if (!current_user_can('edit_posts')) {
-            wp_die('You do not have permission to do this');
+            wp_die('You do not have permission');
         }
         
         $user_id = get_current_user_id();
         
-        // Save API key
         if (isset($_POST['aiwa_gemini_api_key'])) {
             update_user_meta($user_id, 'aiwa_gemini_api_key', sanitize_text_field($_POST['aiwa_gemini_api_key']));
         }
         
-        // Save language
         if (isset($_POST['aiwa_preferred_language'])) {
             update_user_meta($user_id, 'aiwa_preferred_language', sanitize_text_field($_POST['aiwa_preferred_language']));
         }
         
-        // Redirect with success message
         wp_redirect(add_query_arg('settings-updated', 'true', admin_url('admin.php?page=wp-content-helper')));
         exit;
     }
     
-    /**
-     * Show admin notice if API key not set
-     */
     public function api_key_notice() {
         $screen = get_current_screen();
-        
-        if (!$screen) return;
-        if (!in_array($screen->id, array('post', 'page'))) return;
+        if (!$screen || !in_array($screen->id, array('post', 'page'))) return;
         
         $api_key = get_user_meta(get_current_user_id(), 'aiwa_gemini_api_key', true);
         if (empty($api_key)) {
             ?>
             <div class="notice notice-warning is-dismissible">
                 <p>
-                    <strong>🤖 WP Content Helper:</strong> Configure your AI Assistant settings to start using AI features.
+                    <strong>🤖 WP Content Helper:</strong> Configure your AI Assistant to start using features.
                     <a href="<?php echo admin_url('admin.php?page=wp-content-helper'); ?>" style="font-weight: 600;">Go to Settings →</a>
                 </p>
             </div>
@@ -336,7 +278,7 @@ class AIWA_User_Settings {
 }
 
 // ========================================
-// GUTENBERG INTEGRATION
+// GUTENBERG TOOLBAR INTEGRATION
 // ========================================
 class AIWA_Gutenberg {
     private static $instance = null;
@@ -358,361 +300,333 @@ class AIWA_Gutenberg {
         $preferred_language = get_user_meta($user_id, 'aiwa_preferred_language', true);
         if (empty($preferred_language)) $preferred_language = 'en';
         
-        wp_enqueue_script('wp-plugins');
-        wp_enqueue_script('wp-edit-post');
-        wp_enqueue_script('wp-element');
+        wp_enqueue_script('wp-rich-text');
+        wp_enqueue_script('wp-block-editor');
         wp_enqueue_script('wp-components');
+        wp_enqueue_script('wp-element');
         wp_enqueue_script('wp-data');
         
-        // Complete JavaScript with all 3 tabs
-        wp_add_inline_script('wp-plugins', "
-            (function(wp) {
-                const { registerPlugin } = wp.plugins;
-                const { PluginSidebar, PluginSidebarMoreMenuItem } = wp.editPost;
-                const { PanelBody, Button, TextareaControl, SelectControl, Spinner, Notice } = wp.components;
-                const { createElement: el, Fragment, useState } = wp.element;
+        // Add toolbar buttons
+        wp_add_inline_script('wp-rich-text', "
+(function(wp) {
+    const { registerFormatType } = wp.richText;
+    const { RichTextToolbarButton } = wp.blockEditor;
+    const { createElement: el, Fragment, useState } = wp.element;
+    const { Modal, Button, SelectControl, Spinner } = wp.components;
+    const { useSelect } = wp.data;
+    
+    const hasApiKey = " . (empty($api_key) ? 'false' : 'true') . ";
+    const settingsUrl = '" . admin_url('admin.php?page=wp-content-helper') . "';
+    
+    // AI Improve Button (Quick Action)
+    const AIImproveButton = (props) => {
+        const [isLoading, setIsLoading] = useState(false);
+        
+        const selectedBlock = useSelect((select) => {
+            return select('core/block-editor').getSelectedBlock();
+        }, []);
+        
+        if (!selectedBlock || (selectedBlock.name !== 'core/paragraph' && selectedBlock.name !== 'core/heading')) {
+            return null;
+        }
+        
+        const improveText = async () => {
+            if (!hasApiKey) {
+                alert('Please add your API key in AI Assistant settings first.');
+                window.open(settingsUrl, '_blank');
+                return;
+            }
+            
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+            
+            if (!selectedText) {
+                alert('Please select some text first');
+                return;
+            }
+            
+            setIsLoading(true);
+            
+            try {
+                const response = await fetch(ajaxurl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({
+                        action: 'aiwa_improve_text',
+                        nonce: '" . wp_create_nonce('aiwa_nonce') . "',
+                        text: selectedText,
+                        language: '{$preferred_language}'
+                    })
+                });
                 
-                const AIAssistant = () => {
-                    const [isLoading, setIsLoading] = useState(false);
-                    const [result, setResult] = useState(null);
-                    const [error, setError] = useState(null);
-                    const [activeTab, setActiveTab] = useState('grammar');
-                    const [tone, setTone] = useState('professional');
-                    const [prompt, setPrompt] = useState('');
-                    const [language, setLanguage] = useState('{$preferred_language}');
-                    
-                    const hasApiKey = " . (empty($api_key) ? 'false' : 'true') . ";
-                    const settingsUrl = '" . admin_url('admin.php?page=wp-content-helper') . "';
-                    
-                    const getContent = () => {
-                        const editor = wp.data.select('core/editor');
-                        const blocks = editor.getBlocks();
-                        let text = '';
-                        blocks.forEach(block => {
-                            if (block.attributes && block.attributes.content) {
-                                const temp = document.createElement('div');
-                                temp.innerHTML = block.attributes.content;
-                                text += temp.textContent + ' ';
-                            }
-                        });
-                        return text.trim();
-                    };
-                    
-                    const checkGrammar = async () => {
-                        const text = getContent();
-                        if (!text) {
-                            setError('Please write some content first.');
-                            return;
-                        }
-                        
-                        setIsLoading(true);
-                        setError(null);
-                        setResult(null);
-                        
-                        try {
-                            const response = await fetch(ajaxurl, {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                                body: new URLSearchParams({
-                                    action: 'aiwa_check_grammar',
-                                    nonce: '" . wp_create_nonce('aiwa_nonce') . "',
-                                    text: text,
-                                    language: language
-                                })
-                            });
-                            
-                            const data = await response.json();
-                            if (data.success) {
-                                setResult(data.data);
-                            } else {
-                                setError(data.data.message || 'Error occurred');
-                            }
-                        } catch (err) {
-                            setError('Network error: ' + err.message);
-                        } finally {
-                            setIsLoading(false);
-                        }
-                    };
-                    
-                    const rewriteContent = async () => {
-                        const text = getContent();
-                        if (!text) {
-                            setError('Please write some content first.');
-                            return;
-                        }
-                        
-                        setIsLoading(true);
-                        setError(null);
-                        setResult(null);
-                        
-                        try {
-                            const response = await fetch(ajaxurl, {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                                body: new URLSearchParams({
-                                    action: 'aiwa_rewrite_content',
-                                    nonce: '" . wp_create_nonce('aiwa_nonce') . "',
-                                    text: text,
-                                    tone: tone,
-                                    language: language
-                                })
-                            });
-                            
-                            const data = await response.json();
-                            if (data.success) {
-                                setResult({ rewritten: data.data });
-                            } else {
-                                setError(data.data.message || 'Error occurred');
-                            }
-                        } catch (err) {
-                            setError('Network error: ' + err.message);
-                        } finally {
-                            setIsLoading(false);
-                        }
-                    };
-                    
-                    const generateContent = async () => {
-                        if (!prompt.trim()) {
-                            setError('Please enter what you want to generate.');
-                            return;
-                        }
-                        
-                        setIsLoading(true);
-                        setError(null);
-                        setResult(null);
-                        
-                        const context = getContent();
-                        
-                        try {
-                            const response = await fetch(ajaxurl, {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                                body: new URLSearchParams({
-                                    action: 'aiwa_generate_content',
-                                    nonce: '" . wp_create_nonce('aiwa_nonce') . "',
-                                    prompt: prompt,
-                                    context: context,
-                                    language: language
-                                })
-                            });
-                            
-                            const data = await response.json();
-                            if (data.success) {
-                                setResult({ generated: data.data });
-                            } else {
-                                setError(data.data.message || 'Error occurred');
-                            }
-                        } catch (err) {
-                            setError('Network error: ' + err.message);
-                        } finally {
-                            setIsLoading(false);
-                        }
-                    };
-                    
-                    const copyToClipboard = (text) => {
-                        navigator.clipboard.writeText(text).then(() => {
-                            alert('Copied to clipboard!');
-                        }).catch(() => {
-                            alert('Failed to copy');
-                        });
-                    };
-                    
-                    const renderTabs = () => {
-                        const tabs = [
-                            { id: 'grammar', label: '✓ Grammar' },
-                            { id: 'rewrite', label: '✏️ Rewrite' },
-                            { id: 'generate', label: '✨ Generate' }
-                        ];
-                        
-                        return el('div', { style: { display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '2px solid #e5e7eb' } },
-                            tabs.map(tab => 
-                                el(Button, {
-                                    key: tab.id,
-                                    onClick: () => {
-                                        setActiveTab(tab.id);
-                                        setResult(null);
-                                        setError(null);
-                                    },
-                                    style: {
-                                        padding: '8px 12px',
-                                        background: activeTab === tab.id ? '#667eea' : 'transparent',
-                                        color: activeTab === tab.id ? 'white' : '#64748b',
-                                        border: 'none',
-                                        borderRadius: '4px 4px 0 0',
-                                        fontWeight: '600',
-                                        cursor: 'pointer'
-                                    }
-                                }, tab.label)
-                            )
-                        );
-                    };
-                    
-                    const renderGrammarTab = () => {
-                        return el(Fragment, {},
-                            el('p', { style: { marginBottom: '15px', color: '#64748b', fontSize: '13px' } }, 'Check grammar, spelling, and style'),
-                            el(Button, {
-                                isPrimary: true,
-                                onClick: checkGrammar,
-                                disabled: isLoading,
-                                style: { width: '100%', marginBottom: '15px', justifyContent: 'center' }
-                            }, isLoading ? 'Analyzing...' : '🔍 Check Grammar'),
-                            
-                            result && result.errors && el('div', { style: { marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' } },
-                                el('div', { style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '15px', borderRadius: '8px', marginBottom: '15px' } },
-                                    el('h3', { style: { margin: '0 0 8px 0', fontSize: '18px' } }, 'Score: ' + result.overall_score + '/100'),
-                                    el('p', { style: { margin: '0', fontSize: '14px' } }, result.summary)
-                                ),
-                                result.errors.length > 0 ?
-                                    el('div', {},
-                                        el('h4', { style: { marginTop: '0', fontSize: '14px' } }, 'Suggestions:'),
-                                        result.errors.slice(0, 10).map((err, idx) => 
-                                            el('div', { 
-                                                key: idx, 
-                                                style: { 
-                                                    background: 'white', 
-                                                    padding: '10px', 
-                                                    marginBottom: '8px', 
-                                                    borderRadius: '6px', 
-                                                    borderLeft: '4px solid #f59e0b',
-                                                    fontSize: '13px'
-                                                } 
-                                            },
-                                                el('div', { style: { fontWeight: 'bold', color: '#f59e0b', marginBottom: '5px', textTransform: 'uppercase', fontSize: '11px' } }, err.type),
-                                                el('div', { style: { marginBottom: '5px' } }, el('strong', {}, 'Original: '), err.original),
-                                                el('div', { style: { marginBottom: '5px', color: '#16a34a' } }, el('strong', {}, 'Fix: '), err.suggestion),
-                                                err.explanation && el('p', { style: { margin: '5px 0 0 0', fontSize: '12px', color: '#64748b', fontStyle: 'italic' } }, err.explanation)
-                                            )
-                                        )
-                                    ) :
-                                    el('p', { style: { color: '#16a34a', fontWeight: '600', textAlign: 'center' } }, '✓ No errors found!')
-                            )
-                        );
-                    };
-                    
-                    const renderRewriteTab = () => {
-                        return el(Fragment, {},
-                            el(SelectControl, {
-                                label: 'Tone',
-                                value: tone,
-                                options: [
-                                    { label: 'Professional', value: 'professional' },
-                                    { label: 'Casual', value: 'casual' },
-                                    { label: 'Friendly', value: 'friendly' },
-                                    { label: 'Academic', value: 'academic' },
-                                    { label: 'Creative', value: 'creative' },
-                                    { label: 'Simple', value: 'simple' },
-                                    { label: 'Persuasive', value: 'persuasive' }
-                                ],
-                                onChange: setTone
-                            }),
-                            el(Button, {
-                                isPrimary: true,
-                                onClick: rewriteContent,
-                                disabled: isLoading,
-                                style: { width: '100%', justifyContent: 'center' }
-                            }, isLoading ? 'Rewriting...' : '✏️ Rewrite'),
-                            
-                            result && result.rewritten && el('div', { style: { marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' } },
-                                el('h4', { style: { marginTop: 0, fontSize: '14px' } }, 'Rewritten:'),
-                                el('div', { style: { background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '10px', lineHeight: '1.6', fontSize: '14px' } }, 
-                                    result.rewritten
-                                ),
-                                el(Button, { 
-                                    onClick: () => copyToClipboard(result.rewritten),
-                                    isSecondary: true,
-                                    style: { width: '100%' }
-                                }, '📋 Copy')
-                            )
-                        );
-                    };
-                    
-                    const renderGenerateTab = () => {
-                        return el(Fragment, {},
-                            el(TextareaControl, {
-                                label: 'What do you want to write about?',
-                                value: prompt,
-                                onChange: setPrompt,
-                                placeholder: 'e.g., Write an introduction about...',
-                                rows: 4
-                            }),
-                            el(Button, {
-                                isPrimary: true,
-                                onClick: generateContent,
-                                disabled: isLoading || !prompt.trim(),
-                                style: { width: '100%', justifyContent: 'center' }
-                            }, isLoading ? 'Generating...' : '✨ Generate'),
-                            
-                            result && result.generated && el('div', { style: { marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' } },
-                                el('h4', { style: { marginTop: 0, fontSize: '14px' } }, 'Generated:'),
-                                el('div', { style: { background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '10px', lineHeight: '1.6', fontSize: '14px' } }, 
-                                    result.generated
-                                ),
-                                el(Button, { 
-                                    onClick: () => copyToClipboard(result.generated),
-                                    isSecondary: true,
-                                    style: { width: '100%' }
-                                }, '📋 Copy')
-                            )
-                        );
-                    };
-                    
-                    return el(Fragment, {},
-                        el(PluginSidebarMoreMenuItem, { 
-                            target: 'ai-writing-assistant-sidebar', 
-                            icon: 'edit' 
-                        }, 'AI Writing Assistant'),
-                        
-                        el(PluginSidebar, { 
-                            name: 'ai-writing-assistant-sidebar', 
-                            icon: 'edit', 
-                            title: '🤖 AI Writing Assistant' 
-                        },
-                            el(PanelBody, {},
-                                !hasApiKey ?
-                                    el(Notice, { 
-                                        status: 'warning', 
-                                        isDismissible: false 
-                                    },
-                                        el('div', {},
-                                            el('p', { style: { margin: '0 0 8px 0' } }, 
-                                                '⚠️ Please configure your AI Assistant settings first.'
-                                            ),
-                                            el('a', { 
-                                                href: settingsUrl,
-                                                style: { 
-                                                    display: 'inline-block',
-                                                    padding: '6px 12px',
-                                                    background: '#667eea',
-                                                    color: 'white',
-                                                    borderRadius: '4px',
-                                                    textDecoration: 'none',
-                                                    fontSize: '13px'
-                                                }
-                                            }, '➜ Go to Settings')
-                                        )
-                                    ) :
-                                    el(Fragment, {},
-                                        renderTabs(),
-                                        el('div', { style: { marginTop: '15px' } },
-                                            activeTab === 'grammar' && renderGrammarTab(),
-                                            activeTab === 'rewrite' && renderRewriteTab(),
-                                            activeTab === 'generate' && renderGenerateTab()
-                                        ),
-                                        error && el(Notice, { 
-                                            status: 'error', 
-                                            onRemove: () => setError(null) 
-                                        }, error),
-                                        isLoading && el('div', { style: { textAlign: 'center', padding: '20px' } }, 
-                                            el(Spinner)
-                                        )
-                                    )
-                            )
-                        )
-                    );
-                };
+                const data = await response.json();
                 
-                registerPlugin('ai-writing-assistant', { render: AIAssistant });
-            })(window.wp);
+                if (data.success) {
+                    // Replace selected text with improved version
+                    const improved = data.data;
+                    document.execCommand('insertText', false, improved);
+                    alert('✓ Text improved!');
+                } else {
+                    alert('Error: ' + (data.data.message || 'Failed to improve text'));
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        return el(RichTextToolbarButton, {
+            icon: 'star-filled',
+            title: 'AI Improve (select text first)',
+            onClick: improveText,
+            isDisabled: isLoading,
+            style: isLoading ? { color: '#667eea' } : {}
+        });
+    };
+    
+    // Grammar Check Button
+    const GrammarCheckButton = (props) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [isLoading, setIsLoading] = useState(false);
+        const [result, setResult] = useState(null);
+        
+        const selectedBlock = useSelect((select) => {
+            return select('core/block-editor').getSelectedBlock();
+        }, []);
+        
+        if (!selectedBlock || (selectedBlock.name !== 'core/paragraph' && selectedBlock.name !== 'core/heading')) {
+            return null;
+        }
+        
+        const checkGrammar = async () => {
+            if (!hasApiKey) {
+                alert('Please add your API key in AI Assistant settings first.');
+                window.open(settingsUrl, '_blank');
+                return;
+            }
+            
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+            
+            if (!selectedText) {
+                alert('Please select some text first');
+                return;
+            }
+            
+            setIsOpen(true);
+            setIsLoading(true);
+            setResult(null);
+            
+            try {
+                const response = await fetch(ajaxurl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({
+                        action: 'aiwa_check_grammar',
+                        nonce: '" . wp_create_nonce('aiwa_nonce') . "',
+                        text: selectedText,
+                        language: '{$preferred_language}'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    setResult(data.data);
+                } else {
+                    alert('Error: ' + (data.data.message || 'Failed to check grammar'));
+                    setIsOpen(false);
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+                setIsOpen(false);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        return el(Fragment, {},
+            el(RichTextToolbarButton, {
+                icon: 'yes-alt',
+                title: 'Check Grammar (select text first)',
+                onClick: checkGrammar
+            }),
+            isOpen && el(Modal, {
+                title: '✓ Grammar Check Results',
+                onRequestClose: () => setIsOpen(false),
+                style: { maxWidth: '600px' }
+            },
+                isLoading ? el(Spinner) :
+                result && el('div', {},
+                    el('div', { style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '15px', borderRadius: '8px', marginBottom: '15px' } },
+                        el('h3', { style: { margin: '0 0 8px 0' } }, 'Score: ' + result.overall_score + '/100'),
+                        el('p', { style: { margin: 0 } }, result.summary)
+                    ),
+                    result.errors && result.errors.length > 0 ?
+                        result.errors.map((err, idx) => 
+                            el('div', { 
+                                key: idx,
+                                style: { 
+                                    background: '#f8f9fa', 
+                                    padding: '12px', 
+                                    marginBottom: '10px', 
+                                    borderRadius: '6px',
+                                    borderLeft: '4px solid #f59e0b'
+                                }
+                            },
+                                el('strong', { style: { color: '#f59e0b', textTransform: 'uppercase', fontSize: '12px' } }, err.type),
+                                el('div', { style: { marginTop: '5px' } }, 
+                                    el('strong', {}, 'Original: '), err.original
+                                ),
+                                el('div', { style: { marginTop: '5px', color: '#16a34a' } }, 
+                                    el('strong', {}, 'Fix: '), err.suggestion
+                                ),
+                                err.explanation && el('p', { style: { margin: '5px 0 0 0', fontSize: '13px', color: '#64748b', fontStyle: 'italic' } }, err.explanation)
+                            )
+                        ) :
+                        el('p', { style: { color: '#16a34a', fontWeight: '600', textAlign: 'center', padding: '20px' } }, '✓ No errors found!')
+                )
+            )
+        );
+    };
+    
+    // Rewrite Button
+    const RewriteButton = (props) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [isLoading, setIsLoading] = useState(false);
+        const [tone, setTone] = useState('professional');
+        const [result, setResult] = useState(null);
+        const [originalText, setOriginalText] = useState('');
+        
+        const selectedBlock = useSelect((select) => {
+            return select('core/block-editor').getSelectedBlock();
+        }, []);
+        
+        if (!selectedBlock || (selectedBlock.name !== 'core/paragraph' && selectedBlock.name !== 'core/heading')) {
+            return null;
+        }
+        
+        const openModal = () => {
+            if (!hasApiKey) {
+                alert('Please add your API key in AI Assistant settings first.');
+                window.open(settingsUrl, '_blank');
+                return;
+            }
+            
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+            
+            if (!selectedText) {
+                alert('Please select some text first');
+                return;
+            }
+            
+            setOriginalText(selectedText);
+            setIsOpen(true);
+            setResult(null);
+        };
+        
+        const rewriteText = async () => {
+            setIsLoading(true);
+            setResult(null);
+            
+            try {
+                const response = await fetch(ajaxurl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({
+                        action: 'aiwa_rewrite_content',
+                        nonce: '" . wp_create_nonce('aiwa_nonce') . "',
+                        text: originalText,
+                        tone: tone,
+                        language: '{$preferred_language}'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    setResult(data.data);
+                } else {
+                    alert('Error: ' + (data.data.message || 'Failed to rewrite'));
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        const replaceText = () => {
+            if (result) {
+                document.execCommand('insertText', false, result);
+                setIsOpen(false);
+                alert('✓ Text replaced!');
+            }
+        };
+        
+        return el(Fragment, {},
+            el(RichTextToolbarButton, {
+                icon: 'edit',
+                title: 'Rewrite (select text first)',
+                onClick: openModal
+            }),
+            isOpen && el(Modal, {
+                title: '✏️ Rewrite Text',
+                onRequestClose: () => setIsOpen(false),
+                style: { maxWidth: '600px' }
+            },
+                el(SelectControl, {
+                    label: 'Tone',
+                    value: tone,
+                    options: [
+                        { label: 'Professional', value: 'professional' },
+                        { label: 'Casual', value: 'casual' },
+                        { label: 'Friendly', value: 'friendly' },
+                        { label: 'Academic', value: 'academic' },
+                        { label: 'Creative', value: 'creative' },
+                        { label: 'Simple', value: 'simple' }
+                    ],
+                    onChange: setTone
+                }),
+                el(Button, {
+                    isPrimary: true,
+                    onClick: rewriteText,
+                    disabled: isLoading
+                }, isLoading ? 'Rewriting...' : 'Rewrite'),
+                result && el('div', { style: { marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' } },
+                    el('h4', { style: { marginTop: 0 } }, 'Rewritten:'),
+                    el('div', { style: { background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '10px', lineHeight: '1.6' } }, result),
+                    el(Button, { isPrimary: true, onClick: replaceText }, 'Replace Selected Text')
+                )
+            )
+        );
+    };
+    
+    // Register format types
+    registerFormatType('aiwa/ai-improve', {
+        title: 'AI Improve',
+        tagName: 'span',
+        className: null,
+        edit: AIImproveButton
+    });
+    
+    registerFormatType('aiwa/grammar-check', {
+        title: 'Grammar Check',
+        tagName: 'span',
+        className: null,
+        edit: GrammarCheckButton
+    });
+    
+    registerFormatType('aiwa/rewrite', {
+        title: 'Rewrite',
+        tagName: 'span',
+        className: null,
+        edit: RewriteButton
+    });
+    
+})(window.wp);
         ");
     }
 }
@@ -737,6 +651,7 @@ class AI_Writing_Assistant {
         add_action('wp_ajax_aiwa_check_grammar', array($this, 'ajax_check_grammar'));
         add_action('wp_ajax_aiwa_rewrite_content', array($this, 'ajax_rewrite_content'));
         add_action('wp_ajax_aiwa_generate_content', array($this, 'ajax_generate_content'));
+        add_action('wp_ajax_aiwa_improve_text', array($this, 'ajax_improve_text'));
     }
     
     public function ajax_check_grammar() {
@@ -813,7 +728,29 @@ class AI_Writing_Assistant {
         
         wp_send_json_success($result);
     }
+    
+    public function ajax_improve_text() {
+        check_ajax_referer('aiwa_nonce', 'nonce');
+        
+        $user_id = get_current_user_id();
+        $api_key = get_user_meta($user_id, 'aiwa_gemini_api_key', true);
+        
+        if (empty($api_key)) {
+            wp_send_json_error(array('message' => 'Please add your API key.'));
+        }
+        
+        $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
+        $language = isset($_POST['language']) ? sanitize_text_field($_POST['language']) : 'en';
+        
+        $gemini = new AIWA_Gemini_API($api_key);
+        $result = $gemini->improve_text($text, $language);
+        
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+        }
+        
+        wp_send_json_success($result);
+    }
 }
 
-// Initialize plugin
 add_action('plugins_loaded', array('AI_Writing_Assistant', 'get_instance'));
