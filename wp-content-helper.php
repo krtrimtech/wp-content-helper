@@ -538,7 +538,8 @@ class AIWA_Ajax {
     }
     
     public function improve() {
-        check_ajax_referer('aiwa');
+-        check_ajax_referer('aiwa');
++        check_ajax_referer('aiwa', 'nonce');
         
         $user_id = get_current_user_id();
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
@@ -563,7 +564,8 @@ class AIWA_Ajax {
     }
     
     public function grammar() {
-        check_ajax_referer('aiwa');
+-        check_ajax_referer('aiwa');
++        check_ajax_referer('aiwa', 'nonce');
         
         $user_id = get_current_user_id();
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
@@ -588,7 +590,8 @@ class AIWA_Ajax {
     }
     
     public function rewrite() {
-        check_ajax_referer('aiwa');
+-        check_ajax_referer('aiwa');
++        check_ajax_referer('aiwa', 'nonce');
         
         $user_id = get_current_user_id();
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
