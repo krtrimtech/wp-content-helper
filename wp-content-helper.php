@@ -2,8 +2,8 @@
 /**
  * Plugin Name: WP Content Helper
  * Plugin URI: https://github.com/krtrimtech/wp-content-helper
- * Description: Grammarly-like AI writing assistant with Google Gemini API. Auto-detects language and applies changes to editor.
- * Version: 1.4.0
+ * Description: Grammarly-like AI writing assistant. Auto-detects language and replaces text directly in editor.
+ * Version: 1.5.0
  * Author: Krtrim (Shyanukant Rathi)
  * Author URI: https://shyanukant.github.io/
  * License: GPL v2 or later
@@ -65,15 +65,13 @@ class AIWA_Gemini_API {
     }
     
     public function improve_text($text) {
-        // Auto-detect language and improve in the same language
-        $prompt = "Improve this text for better clarity, grammar, and flow. Detect the language of the text and respond in THE SAME LANGUAGE. Return ONLY the improved text:\n\n{$text}";
+        $prompt = "Improve this text for better clarity, grammar, and flow. Detect the language and respond in THE SAME LANGUAGE. Return ONLY the improved text:\n\n{$text}";
         return $this->make_request($prompt, 0.7);
     }
     
     public function check_grammar($text) {
-        // Auto-detect language and check grammar
-        $prompt = "Detect the language of this text and check grammar in that language. Provide suggestions in JSON format in the DETECTED LANGUAGE:
-{\"language\": \"detected language name\", \"errors\": [{\"type\": \"grammar\", \"original\": \"text\", \"suggestion\": \"fix\", \"explanation\": \"why\"}], \"score\": 85}
+        $prompt = "Detect language and check grammar. Provide in JSON format in the DETECTED LANGUAGE:
+{\"language\": \"detected language\", \"errors\": [{\"type\": \"grammar\", \"original\": \"text\", \"suggestion\": \"fix\", \"explanation\": \"why\"}], \"score\": 85}
 
 Text: {$text}";
         
@@ -90,8 +88,7 @@ Text: {$text}";
     }
     
     public function rewrite_content($text, $tone = 'professional') {
-        // Auto-detect language and rewrite in the same language
-        $prompt = "Detect the language of this text and rewrite it in a {$tone} tone IN THE SAME LANGUAGE:\n\n{$text}";
+        $prompt = "Detect language and rewrite in {$tone} tone IN THE SAME LANGUAGE:\n\n{$text}";
         return $this->make_request($prompt, 0.7);
     }
 }
@@ -128,7 +125,7 @@ class AIWA_Settings {
         ?>
         <div class="wrap">
             <h1>🤖 AI Writing Assistant</h1>
-            <p>Auto-detects language and responds in the same language (Hindi, English, etc.)</p>
+            <p>Auto-detects language (Hindi, English, etc.) and corrects directly in editor</p>
             <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
                 <input type="hidden" name="action" value="aiwa_save">
                 <?php wp_nonce_field('aiwa'); ?>
@@ -146,13 +143,6 @@ class AIWA_Settings {
                 </table>
                 <?php submit_button(); ?>
             </form>
-            <hr>
-            <h2>Features</h2>
-            <ul>
-                <li>✅ Auto-detects language (Hindi, English, etc.)</li>
-                <li>✅ Responds in the same language</li>
-                <li>✅ Apply button to insert text into editor</li>
-            </ul>
         </div>
         <?php
     }
@@ -214,10 +204,7 @@ class AIWA_Editor_Button {
                 transition: all 0.3s !important;
                 animation: aiwa-pulse 2s infinite !important;
             }
-            #aiwa-green-btn:hover {
-                transform: scale(1.1) !important;
-                background: #15803d !important;
-            }
+            #aiwa-green-btn:hover { transform: scale(1.1) !important; background: #15803d !important; }
             @keyframes aiwa-pulse {
                 0%, 100% { box-shadow: 0 4px 20px rgba(22, 163, 74, 0.5); }
                 50% { box-shadow: 0 4px 30px rgba(22, 163, 74, 0.8); }
@@ -290,12 +277,8 @@ class AIWA_Editor_Button {
                 color: #16a34a !important;
                 border-bottom-color: #16a34a !important;
             }
-            .aiwa-content {
-                display: none;
-            }
-            .aiwa-content.active {
-                display: block !important;
-            }
+            .aiwa-content { display: none; }
+            .aiwa-content.active { display: block !important; }
             .aiwa-textarea {
                 width: 100% !important;
                 padding: 12px !important;
@@ -329,6 +312,7 @@ class AIWA_Editor_Button {
                 background: #f0fdf4 !important;
                 border-radius: 8px !important;
                 border-left: 4px solid #16a34a !important;
+                line-height: 1.6 !important;
             }
             .aiwa-select {
                 width: 100% !important;
@@ -336,16 +320,6 @@ class AIWA_Editor_Button {
                 border: 2px solid #e5e7eb !important;
                 border-radius: 8px !important;
                 margin-bottom: 10px !important;
-            }
-            .aiwa-lang-badge {
-                display: inline-block;
-                padding: 4px 8px;
-                background: #667eea;
-                color: white;
-                border-radius: 4px;
-                font-size: 11px;
-                font-weight: 600;
-                margin-left: 8px;
             }
         </style>
 
@@ -365,21 +339,21 @@ class AIWA_Editor_Button {
                 </div>
                 
                 <div id="tab-improve" class="aiwa-content active">
-                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Paste text (any language - Hindi, English, etc.)</p>
-                    <textarea id="text-improve" class="aiwa-textarea" rows="5" placeholder="अपना टेक्स्ट यहाँ पेस्ट करें... / Paste your text here..."></textarea>
+                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Select text in editor, then improve</p>
+                    <textarea id="text-improve" class="aiwa-textarea" rows="5" placeholder="अपना टेक्स्ट चुनें / Select text..."></textarea>
                     <button id="btn-improve" class="aiwa-btn">✨ Improve Text</button>
                     <div id="result-improve"></div>
                 </div>
                 
                 <div id="tab-grammar" class="aiwa-content">
-                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Auto-detects language and checks grammar</p>
-                    <textarea id="text-grammar" class="aiwa-textarea" rows="5" placeholder="किसी भी भाषा में टेक्स्ट पेस्ट करें... / Any language..."></textarea>
+                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Auto-detects language</p>
+                    <textarea id="text-grammar" class="aiwa-textarea" rows="5" placeholder="किसी भी भाषा में..."></textarea>
                     <button id="btn-grammar" class="aiwa-btn">✓ Check Grammar</button>
                     <div id="result-grammar"></div>
                 </div>
                 
                 <div id="tab-rewrite" class="aiwa-content">
-                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Rewrite in different tone (same language)</p>
+                    <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Rewrite in different tone</p>
                     <select id="tone" class="aiwa-select">
                         <option value="professional">Professional</option>
                         <option value="casual">Casual</option>
@@ -402,17 +376,63 @@ class AIWA_Editor_Button {
             const ajaxUrl = '<?php echo admin_url('admin-ajax.php'); ?>';
             const nonce = '<?php echo wp_create_nonce('aiwa'); ?>';
             
-            let currentImprovedText = '';
-            let currentRewrittenText = '';
+            let savedSelection = null;
+            let savedRange = null;
             
-            console.log('🤖 AI Assistant loaded with auto-language detection');
+            console.log('🤖 AI Assistant loaded - Grammarly-style text replacement');
+            
+            // Save selection when modal opens
+            function saveSelection() {
+                const sel = window.getSelection();
+                if (sel.rangeCount > 0) {
+                    savedRange = sel.getRangeAt(0);
+                    savedSelection = sel.toString().trim();
+                    return savedSelection;
+                }
+                return '';
+            }
+            
+            // Replace text at saved selection (LIKE GRAMMARLY!)
+            function replaceAtSelection(newText) {
+                if (!savedRange) {
+                    alert('No text selected. Please select text first.');
+                    return false;
+                }
+                
+                // Restore the selection
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(savedRange);
+                
+                // Delete the old content
+                savedRange.deleteContents();
+                
+                // Insert new text
+                const textNode = document.createTextNode(newText);
+                savedRange.insertNode(textNode);
+                
+                // Move cursor to end of inserted text
+                savedRange.setStartAfter(textNode);
+                savedRange.setEndAfter(textNode);
+                sel.removeAllRanges();
+                sel.addRange(savedRange);
+                
+                console.log('✓ Text replaced at selection');
+                return true;
+            }
             
             // Toggle modal
-            $('#aiwa-green-btn, #aiwa-overlay').click(function() {
-                $('#aiwa-modal, #aiwa-overlay').toggleClass('show');
+            $('#aiwa-green-btn').click(function() {
+                const selected = saveSelection();
+                $('#aiwa-modal, #aiwa-overlay').addClass('show');
+                
+                if (selected) {
+                    const activeTab = $('.aiwa-tab.active').data('tab');
+                    $('#text-' + activeTab).val(selected);
+                }
             });
             
-            $('.aiwa-close').click(function() {
+            $('#aiwa-overlay, .aiwa-close').click(function() {
                 $('#aiwa-modal, #aiwa-overlay').removeClass('show');
             });
             
@@ -423,51 +443,23 @@ class AIWA_Editor_Button {
                 $('.aiwa-content').removeClass('active');
                 $(this).addClass('active');
                 $('#tab-' + tab).addClass('active');
-            });
-            
-            // Auto-fill from selection
-            $(document).on('selectionchange', function() {
-                const sel = window.getSelection().toString().trim();
-                if (sel && $('#aiwa-modal').hasClass('show')) {
-                    const activeTab = $('.aiwa-tab.active').data('tab');
-                    $('#text-' + activeTab).val(sel);
-                }
-            });
-            
-            // Function to insert text into editor
-            function insertIntoEditor(text) {
-                // Try to insert into active editor
-                if (typeof tinymce !== 'undefined' && tinymce.activeEditor) {
-                    // Classic editor
-                    tinymce.activeEditor.insertContent(text);
-                    alert('✓ Text inserted into editor!');
-                } else if (wp && wp.data) {
-                    // Gutenberg editor
-                    const editor = wp.data.select('core/block-editor');
-                    const selectedBlock = editor.getSelectedBlock();
-                    
-                    if (selectedBlock) {
-                        // Insert into current block
-                        wp.data.dispatch('core/block-editor').updateBlockAttributes(
-                            selectedBlock.clientId,
-                            { content: text }
-                        );
-                        alert('✓ Text replaced in selected block!');
-                    } else {
-                        // Create new paragraph block
-                        const newBlock = wp.blocks.createBlock('core/paragraph', { content: text });
-                        wp.data.dispatch('core/block-editor').insertBlocks(newBlock);
-                        alert('✓ Text added as new paragraph!');
-                    }
-                } else {
-                    // Fallback: copy to clipboard
-                    navigator.clipboard.writeText(text).then(() => {
-                        alert('✓ Copied to clipboard! Paste it manually (Ctrl+V)');
-                    });
-                }
                 
-                $('#aiwa-modal, #aiwa-overlay').removeClass('show');
-            }
+                if (savedSelection) {
+                    $('#text-' + tab).val(savedSelection);
+                }
+            });
+            
+            // Auto-fill on text selection
+            $(document).on('mouseup keyup', function() {
+                if ($('#aiwa-modal').hasClass('show')) {
+                    const selected = window.getSelection().toString().trim();
+                    if (selected) {
+                        saveSelection();
+                        const activeTab = $('.aiwa-tab.active').data('tab');
+                        $('#text-' + activeTab).val(selected);
+                    }
+                }
+            });
             
             // Improve
             $('#btn-improve').click(function() {
@@ -478,7 +470,7 @@ class AIWA_Editor_Button {
                 }
                 
                 const text = $('#text-improve').val().trim();
-                if (!text) return alert('Please enter text');
+                if (!text) return alert('Please select text first');
                 
                 const btn = $(this);
                 btn.prop('disabled', true).text('Improving...');
@@ -494,17 +486,17 @@ class AIWA_Editor_Button {
                     },
                     success: function(res) {
                         if (res.success) {
-                            currentImprovedText = res.data;
                             $('#result-improve').html(
-                                '<div class="aiwa-result">' +
-                                '<strong>Improved:</strong><br>' + res.data + 
-                                '</div>' +
-                                '<button class="aiwa-btn aiwa-btn-apply" onclick="jQuery(this).parent().find(\'.apply-improve\').click()">📝 Apply to Editor</button>' +
-                                '<button class="apply-improve" style="display:none;"></button>'
+                                '<div class="aiwa-result">' + res.data + '</div>' +
+                                '<button class="aiwa-btn aiwa-btn-apply" data-text="' + res.data.replace(/"/g, '&quot;') + '">📝 Replace Selected Text</button>'
                             );
                             
-                            $('.apply-improve').click(function() {
-                                insertIntoEditor(currentImprovedText);
+                            $('.aiwa-btn-apply').click(function() {
+                                const newText = $(this).data('text');
+                                if (replaceAtSelection(newText)) {
+                                    alert('✓ Text replaced!');
+                                    $('#aiwa-modal, #aiwa-overlay').removeClass('show');
+                                }
                             });
                         } else {
                             $('#result-improve').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
@@ -546,28 +538,23 @@ class AIWA_Editor_Button {
                         if (res.success) {
                             const lang = res.data.language || 'Unknown';
                             let html = '<div class="aiwa-result">';
-                            html += '<strong>Language: <span class="aiwa-lang-badge">' + lang + '</span></strong><br>';
-                            html += '<strong>Score: ' + (res.data.score || 90) + '/100</strong>';
+                            html += '<strong>Language: ' + lang + ' | Score: ' + (res.data.score || 90) + '/100</strong><hr style="margin:10px 0;">';
                             
                             if (res.data.errors && res.data.errors.length > 0) {
-                                html += '<hr style="margin:10px 0;">';
                                 res.data.errors.forEach(function(err) {
                                     html += '<div style="margin:10px 0;padding:8px;background:#fff;border-left:3px solid #f59e0b;border-radius:4px;">';
                                     html += '<strong style="color:#f59e0b;">' + err.type + '</strong><br>';
-                                    html += '<div style="margin:5px 0;"><strong>Original:</strong> ' + err.original + '</div>';
+                                    html += '<div><strong>Original:</strong> ' + err.original + '</div>';
                                     html += '<div style="color:#16a34a;"><strong>Fix:</strong> ' + err.suggestion + '</div>';
-                                    if (err.explanation) {
-                                        html += '<div style="font-size:12px;color:#64748b;margin-top:5px;">' + err.explanation + '</div>';
-                                    }
                                     html += '</div>';
                                 });
                             } else {
-                                html += '<div style="color:#16a34a;margin-top:10px;">✓ No errors found!</div>';
+                                html += '<div style="color:#16a34a;">✓ No errors found!</div>';
                             }
                             html += '</div>';
                             $('#result-grammar').html(html);
                         } else {
-                            $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
+                            $('#result-grammar').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error</div>');
                         }
                     },
                     error: function() {
@@ -589,7 +576,7 @@ class AIWA_Editor_Button {
                 
                 const text = $('#text-rewrite').val().trim();
                 const tone = $('#tone').val();
-                if (!text) return alert('Please enter text');
+                if (!text) return alert('Please select text first');
                 
                 const btn = $(this);
                 btn.prop('disabled', true).text('Rewriting...');
@@ -606,20 +593,20 @@ class AIWA_Editor_Button {
                     },
                     success: function(res) {
                         if (res.success) {
-                            currentRewrittenText = res.data;
                             $('#result-rewrite').html(
-                                '<div class="aiwa-result">' +
-                                '<strong>Rewritten (' + tone + '):</strong><br>' + res.data + 
-                                '</div>' +
-                                '<button class="aiwa-btn aiwa-btn-apply" onclick="jQuery(this).parent().find(\'.apply-rewrite\').click()">📝 Apply to Editor</button>' +
-                                '<button class="apply-rewrite" style="display:none;"></button>'
+                                '<div class="aiwa-result">' + res.data + '</div>' +
+                                '<button class="aiwa-btn aiwa-btn-apply" data-text="' + res.data.replace(/"/g, '&quot;') + '">📝 Replace Selected Text</button>'
                             );
                             
-                            $('.apply-rewrite').click(function() {
-                                insertIntoEditor(currentRewrittenText);
+                            $('.aiwa-btn-apply').click(function() {
+                                const newText = $(this).data('text');
+                                if (replaceAtSelection(newText)) {
+                                    alert('✓ Text replaced!');
+                                    $('#aiwa-modal, #aiwa-overlay').removeClass('show');
+                                }
                             });
                         } else {
-                            $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error: ' + (res.data || 'Failed') + '</div>');
+                            $('#result-rewrite').html('<div class="aiwa-result" style="border-left-color:#f59e0b;">Error</div>');
                         }
                     },
                     error: function() {
@@ -662,12 +649,12 @@ class AIWA_Ajax {
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key configured');
+            wp_send_json_error('No API key');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
         if (!$text) {
-            wp_send_json_error('No text provided');
+            wp_send_json_error('No text');
         }
         
         $gemini = new AIWA_Gemini_API($api_key);
@@ -687,12 +674,12 @@ class AIWA_Ajax {
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key configured');
+            wp_send_json_error('No API key');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
         if (!$text) {
-            wp_send_json_error('No text provided');
+            wp_send_json_error('No text');
         }
         
         $gemini = new AIWA_Gemini_API($api_key);
@@ -712,14 +699,14 @@ class AIWA_Ajax {
         $api_key = get_user_meta($user_id, 'aiwa_api_key', true);
         
         if (!$api_key) {
-            wp_send_json_error('No API key configured');
+            wp_send_json_error('No API key');
         }
         
         $text = isset($_POST['text']) ? sanitize_textarea_field($_POST['text']) : '';
         $tone = isset($_POST['tone']) ? sanitize_text_field($_POST['tone']) : 'professional';
         
         if (!$text) {
-            wp_send_json_error('No text provided');
+            wp_send_json_error('No text');
         }
         
         $gemini = new AIWA_Gemini_API($api_key);
