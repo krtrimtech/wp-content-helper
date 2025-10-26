@@ -1,7 +1,3 @@
-Perfect! Here's a comprehensive **README.md** file for your WP Content Helper plugin on GitHub:
-
-***
-
 # 🤖 WP Content Helper
 
 > A powerful Grammarly-like AI writing assistant for WordPress, powered by Google Gemini API.
@@ -13,23 +9,15 @@ Perfect! Here's a comprehensive **README.md** file for your WP Content Helper pl
 
 ## ✨ Features
 
-- **🎯 Inline AI Buttons** - AI tools appear directly in the editor toolbar (like Grammarly)
-- **🔐 Per-User API Keys** - Each user uses their own Gemini API key, not admin-controlled
-- **⚡ Quick AI Improve** - Instantly enhance selected text with one click
-- **✓ Grammar Check** - Comprehensive grammar, spelling, and style analysis
-- **✏️ Smart Rewrite** - Rewrite content in 6 different tones (Professional, Casual, Friendly, Academic, Creative, Simple)
-- **🌐 Multi-Language Support** - Supports 20+ languages including Hindi, Bengali, Punjabi, Tamil, Telugu, and more
-- **📊 Writing Score** - Get instant feedback on your writing quality (0-100 score)
-- **🎨 User-Friendly Interface** - Clean, intuitive modals and toolbar buttons
-- **🚀 Zero Configuration** - Works immediately after adding API key
-- **📱 Gutenberg Native** - Built specifically for the WordPress block editor
-
+- 🌍 **Multi-language Support** - English + all major Indian languages
+- ✏️ **AI Text Improvement** - Enhance clarity and grammar
+- ✓ **Grammar Checking** - Find and fix errors with explanations
+- 🎨 **Content Rewriting** - 6 different tones (professional, casual, friendly, etc.)
+- 🔄 **Direct Text Replacement** - Works like Grammarly - replaces text in-place
+- 🔐 **Private API Keys** - Each user uses their own Gemini API key
+- 🎯 **Universal Compatibility** - Works with Gutenberg, Classic Editor, and Elementor
 ## 🎥 How It Works
 
-1. Select any text in your WordPress editor
-2. Click AI buttons in the toolbar (next to Bold/Italic)
-3. Get instant AI suggestions and improvements
-4. Replace or copy the improved text
 
 ## 📋 Requirements
 
@@ -72,8 +60,7 @@ Then activate the plugin in WordPress admin.
 
 1. After activation, go to **Dashboard → AI Assistant**
 2. Paste your Google Gemini API key
-3. Select your preferred language
-4. Click **"Save Settings"**
+
 
 ### Using AI Features
 
@@ -103,37 +90,18 @@ Then activate the plugin in WordPress admin.
 
 ## 🌍 Supported Languages
 
-- English
-- Hindi (हिंदी)
-- Bengali (বাংলা)
-- Punjabi (ਪੰਜਾਬੀ)
-- Telugu (తెలుగు)
-- Marathi (मराठी)
-- Tamil (தமிழ்)
-- Urdu (اردو)
-- Gujarati (ગુજરાતી)
-- Kannada (ಕನ್ನಡ)
-- Malayalam (മലയാളം)
-- Spanish (Español)
-- French (Français)
-- German (Deutsch)
-- Arabic (العربية)
-- Japanese (日本語)
-- Korean (한국어)
-- Chinese (中文)
-- Russian (Русский)
-- Portuguese (Português)
+- 🇬🇧 English
+- 🇮🇳 Hindi (हिंदी)
+- 🇮🇳 Bengali (বাংলা)
+- 🇮🇳 Tamil (தமிழ்)
+- 🇮🇳 Telugu (తెలుగు)
+- 🇮🇳 Marathi (मराठी)
+- 🇮🇳 Gujarati (ગુજરાતી)
+- 🇮🇳 Kannada (ಕನ್ನಡ)
+- 🇮🇳 Malayalam (മലയാളം)
+- 🇮🇳 Punjabi (ਪੰਜਾਬੀ)
+- 🇮🇳 Urdu (اردو)
 
-## 🛠️ Technical Details
-
-### Architecture
-
-- **Single-file plugin** - All code in one file for easy deployment
-- **No external dependencies** - Uses WordPress's built-in React libraries
-- **Inline CSS & JavaScript** - No separate asset files needed
-- **WordPress Block Editor API** - Native Gutenberg integration
-- **AJAX handlers** - Secure API communication
-- **User meta storage** - Each user's API key stored securely
 
 ### Hooks Used
 
@@ -147,6 +115,8 @@ Then activate the plugin in WordPress admin.
 - API keys stored per-user in WordPress user meta
 - Capability checks (`edit_posts`)
 - Input sanitization on all user inputs
+
+
 
 ## 🤝 Contributing
 
@@ -165,6 +135,42 @@ git clone https://github.com/krtrimtech/wp-content-helper.git
 cd wp-content-helper
 # Make your changes
 # Test on a local WordPress installation
+```
+
+## 📁 File Structure
+
+wp-content-helper/
+├── wp-content-helper.php # Main plugin file
+├── includes/
+│ ├── class-gemini-api.php # Gemini API handler
+│ ├── class-settings.php # Settings page
+│ ├── class-editor-button.php # Floating button & modal
+│ ├── class-ajax-handlers.php # AJAX endpoints
+│ └── prompts.php # AI prompts
+├── assets/
+│ ├── css/
+│ │ └── editor-style.css # All CSS
+│ └── js/
+│ └── editor-script.js # All JavaScript
+└── README.md # This file
+
+text
+
+## 🔧 Development
+
+### Adding New Features
+
+1. **New AI Function**: Add to `includes/prompts.php`
+2. **New AJAX Endpoint**: Add to `includes/class-ajax-handlers.php`
+3. **New UI Element**: Update `assets/css/editor-style.css` and `assets/js/editor-script.js`
+
+### Modifying Prompts
+
+Edit `includes/prompts.php` to change how the AI responds:
+```php
+public static function your_new_prompt($text) {
+return "Your custom prompt here: {$text}";
+}
 ```
 
 ## 📝 Changelog
@@ -220,31 +226,3 @@ If you find this plugin helpful, please consider:
 ***
 
 **Made with ❤️ for the WordPress community**
-
-***
-
-Save this as **`README.md`** in your GitHub repository root. It includes:
-
-✅ Professional formatting with badges
-✅ Complete feature list
-✅ Installation instructions
-✅ Detailed usage guide
-✅ Technical documentation
-✅ Contributing guidelines
-✅ Changelog
-✅ Proper credits to you and Shyanukant Rathi
-✅ Links to your GitHub profiles
-✅ All the features we built
-
-This README will make your plugin look professional and help users understand how to use it! 🎉
-
-[1](https://wordpress.com/plugins/github-readme)
-[2](https://github.com/adamradocz/WordPress-Plugin-Template)
-[3](https://deliciousbrains.com/wordpress-plugin-development-template-files/)
-[4](https://developer.wordpress.org/plugins/wordpress-org/how-your-readme-txt-works/)
-[5](https://fooplugins.com/make-a-wordpress-plugin-part-readme-refactoring/)
-[6](https://software-development-guidelines.github.io/WP-Readme/)
-[7](https://wordpress.org/plugins/git-it-write/)
-[8](https://www.1stfedci.com/wp-content/plugins/create-block-theme/readme.txt)
-[9](https://github.com/gis-ops/wordpress-markdown-git/)
-[10](https://wordpress.com/plugins/browse/github/)
