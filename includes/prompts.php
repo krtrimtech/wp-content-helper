@@ -9,21 +9,20 @@ if (!defined('ABSPATH')) exit;
 class AIWA_Prompts {
     
     /**
-     * Improve text prompt
+     * Improve text prompt - Returns clean text only
      */
     public static function improve_text($text) {
-        return "You are a writing assistant for English and Indian languages ONLY (English, Hindi, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Urdu).
+        return "You are a professional writing editor. Improve the following text for better clarity, grammar, and flow.
 
 CRITICAL RULES:
-1. Detect if the text is in English or any Indian language
+1. Detect the language of the input text (English, Hindi, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Urdu)
 2. Respond ONLY in the SAME language as the input
-3. If text is English, respond in English only
-4. If text is Hindi, respond in Hindi only
-5. DO NOT use Spanish, French, German, or any European languages
-6. Return ONLY the improved text, no explanations
+3. Return ONLY the improved text - NO labels, NO prefixes, NO explanations
+4. Do NOT add phrases like 'Here is the improved text', 'Rewritten version', or similar
+5. Do NOT add 'English Text:', 'Hindi Text:', or any language labels
+6. Return the improved text directly without any additional formatting
 
-Improve this text for clarity and grammar:
-
+Text to improve:
 {$text}";
     }
     
@@ -37,9 +36,9 @@ STRICT RULES:
 1. Only detect these languages: English, Hindi (हिंदी), Bengali (বাংলা), Tamil (தமிழ்), Telugu (తెలుగు), Marathi (मराठी), Gujarati (ગુજરાતી), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), Punjabi (ਪੰਜਾਬੀ), Urdu (اردو)
 2. Respond in the SAME language as the input text
 3. DO NOT use Spanish, French, or any other language
-4. Provide response in JSON format
+4. Provide response in JSON format ONLY
 
-Check grammar and provide suggestions in JSON:
+Check grammar and provide suggestions in this exact JSON format:
 {\"language\": \"detected language\", \"errors\": [{\"type\": \"grammar\", \"original\": \"text\", \"suggestion\": \"fix\", \"explanation\": \"why\"}], \"score\": 85}
 
 Text to check:
@@ -47,22 +46,26 @@ Text to check:
     }
     
     /**
-     * Rewrite content prompt
+     * Rewrite content prompt - Returns clean text only
      */
     public static function rewrite_content($text, $tone) {
-        return "You are a content rewriter for English and Indian languages ONLY.
+        return "You are a professional content rewriter for English and Indian languages.
 
 CRITICAL RULES:
 1. Only work with: English, Hindi, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Urdu
 2. Detect the language of the input text
 3. Rewrite in the SAME language with {$tone} tone
-4. DO NOT translate to Spanish, French, German, or any European language
-5. If input is English, output must be English
-6. If input is Hindi, output must be Hindi
-7. Return ONLY the rewritten text
+4. Return ONLY the rewritten text - NO labels, NO prefixes, NO explanations
+5. Do NOT add phrases like 'Here is', 'Rewritten:', '**Rewritten Text:**', or language labels
+6. Do NOT add 'English Rewritten Text:', 'Hindi Version:', or any prefixes
+7. Do NOT translate to Spanish, French, German, or any European language
+8. If input is English, output must be English only
+9. If input is Hindi, output must be Hindi only
+10. Return the clean rewritten text directly
 
-Rewrite this text in {$tone} tone:
+Tone: {$tone}
 
+Text to rewrite:
 {$text}";
     }
     
