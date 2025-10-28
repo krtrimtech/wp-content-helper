@@ -170,17 +170,7 @@ class AIWA_Feedback {
                         </ul>
                     </div>
                     
-                    <!-- Payment Methods -->
-                    <div style="background:#f0f9ff;padding:20px;border-radius:8px;border-left:4px solid #0ea5e9;">
-                        <h3 style="margin-top:0;color:#0ea5e9;">💳 All Methods</h3>
-                        <ul style="margin:0;line-height:1.8;font-size:14px;">
-                            <li>💖 GitHub Sponsors</li>
-                            <li>💳 PayPal</li>
-                            <li>☕ Buy Me Coffee</li>
-                            <li>🇮🇳 UPI (India)</li>
-                            <li>💝 All Welcome!</li>
-                        </ul>
-                    </div>
+                   
                     
                     <!-- Why Google Forms -->
                     <div style="background:#f0fdf4;padding:20px;border-radius:8px;border-left:4px solid #16a34a;">
