@@ -106,9 +106,11 @@ class AIWA_Feedback {
                         <!-- QR Code Placeholder (you can generate QR code for your UPI ID) -->
                         <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin:0 0 15px 0;">
                             <div style="width:200px;height:200px;margin:0 auto;background:#e5e7eb;display:flex;align-items:center;justify-content:center;border-radius:8px;">
-                                <span style="font-size:48px;">📱</span>
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=<?php echo urlencode($this->upi_id); ?>&pn=<?php echo urlencode('Shyanukant Rathi'); ?>&cu=INR" 
+                                     alt="UPI QR Code" 
+                                     style="width:250px;height:250px;border-radius:8px;border:3px solid #e5e7eb;">
                             </div>
-                            <p style="margin:15px 0 0 0;font-size:13px;color:#64748b;">Generate QR code at upiQR.com</p>
+                            <p style="margin:15px 0 0 0;font-size:13px;color:#64748b;">Scan Me </p>
                         </div>
                         
                         <!-- UPI ID -->
